@@ -2,14 +2,13 @@
 LLMBox Software Application for Building Customized and **Affordable** AI Solutions.
 
 # **Welcome to LLMBox -- a software application to facilitate low-cost, low-compute (no GPU) customation of LLMs!**
-
 This application was designed by Dr. Sara Kingsley (with coding Assistance from various LLMs). The idea and design are original works of the author.
 
-## **CMU Heinz College Implementations**
-This version of LLMBox was made for Dr. Kingsley's AI Development (95864), Applications of NLX and LLM (95820), Generative AI Lab (94844) and Operationalizing AI (94879) courses. 
+## **University Implementations**
+This version of LLMBox was made for Dr. Kingsley's `Generative AI` university courses. 
 
 * For **general instructions**, please see below. 
-* For **course-specific instructions**, please see the `aboutme` directory.
+* For **course-specific instructions**, please see the `about` directory.
 
 ## **Accetable Uses of LLMBox**
 Please adhere to these acceptable use guidelines for LLMBox:
@@ -88,10 +87,10 @@ LLMBOX_APP/
 ```
 
 # **Attribution Statement | How to cite this LLM Software Application:**
-If you use, modify or distribute this software application, you must properly cite or credit the author.
+If you use, modify or distribute this lab material, you must properly cite or credit the author.
 
 *Recommended citation:*
-```Sara Kingsley. September 2026. LLMBox: https://github.com/sarakingsley/llmbox/```
+```Sara Kingsley. September 2026. LLMBox.```
 
 ## **License**
 
@@ -119,4 +118,5 @@ If you distribute this software or a modified version of it, you must:
 - You may not impose additional restrictions that limit the rights granted by the GPL-3.0 license.
 
 For the full license text, see the [LICENSE](le or visit the GNU Project website: https://www.gnu.org/licenses/gpl-3.0.en.html. 【1-d432b6】
+
 

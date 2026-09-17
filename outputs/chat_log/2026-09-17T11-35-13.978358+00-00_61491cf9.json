@@ -1,0 +1,67 @@
+{
+  "session": {
+    "session_id": "61491cf9",
+    "started_at": "2026-09-17T11:35:13.978358+00:00",
+    "model": {
+      "name": "phi4_instruct",
+      "source": "local",
+      "model_id": "microsoft/Phi-4-mini-instruct",
+      "local_path": "/Users/skingsle/Documents/llmbox/models/llms/microsoft/phi-4-mini-instruct",
+      "architecture": "phi3",
+      "dtype": "bfloat16",
+      "device": "auto",
+      "trust_remote_code": false,
+      "supports_tool_calling": true,
+      "supports_structured_output": true,
+      "tool_calling_format": "functools_prompt",
+      "chat_template_kwargs": {}
+    },
+    "generation": {
+      "max_new_tokens": 512,
+      "temperature": 1.0,
+      "top_p": 0.95,
+      "top_k": 64,
+      "do_sample": true,
+      "repetition_penalty": 1.0
+    },
+    "system_prompt": "You are a helpful assistant."
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "user": {
+        "username": "user",
+        "content": "hello!",
+        "timestamp": "2026-09-17T11:35:18.358705+00:00"
+      },
+      "assistant": {
+        "content": "Hello! How can I assist you today?",
+        "timestamp": "2026-09-17T11:35:18.358722+00:00"
+      }
+    },
+    {
+      "turn": 2,
+      "user": {
+        "username": "user",
+        "content": "what is your name?",
+        "timestamp": "2026-09-17T11:35:23.287392+00:00"
+      },
+      "assistant": {
+        "content": "My name isn't one I use in a personal sense, as I'm Phi, an AI developed by Microsoft. How can I help you further?",
+        "timestamp": "2026-09-17T11:35:23.287402+00:00"
+      }
+    },
+    {
+      "turn": 3,
+      "user": {
+        "username": "user",
+        "content": "what is your training data?",
+        "timestamp": "2026-09-17T11:41:59.059614+00:00"
+      },
+      "assistant": {
+        "content": "My长期 training data encompasses a diverse range of sources, including books, websites, articles, and other texts up until my last update in October 2021. However, please note that my training doesn't include any user data or interactions unless they are part of a specific task with appropriate privacy controls in place. I don't have personal experiences or recall data. How may I assist you today?",
+        "timestamp": "2026-09-17T11:41:59.059624+00:00"
+      }
+    }
+  ]
+}

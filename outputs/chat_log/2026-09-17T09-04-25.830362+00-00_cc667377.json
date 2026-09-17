@@ -1,0 +1,42 @@
+{
+  "session": {
+    "session_id": "cc667377",
+    "started_at": "2026-09-17T09:04:25.830362+00:00",
+    "model": {
+      "name": "gemma3_270m_it",
+      "source": "huggingface",
+      "model_id": "google/gemma-3-270m-it",
+      "local_path": null,
+      "architecture": "gemma3_text",
+      "dtype": "bfloat16",
+      "device": "auto",
+      "trust_remote_code": false,
+      "supports_tool_calling": false,
+      "supports_structured_output": true,
+      "chat_template_kwargs": {}
+    },
+    "generation": {
+      "max_new_tokens": 512,
+      "temperature": 1.0,
+      "top_p": 0.95,
+      "top_k": 64,
+      "do_sample": true,
+      "repetition_penalty": 1.0
+    },
+    "system_prompt": "You are a helpful assistant."
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "user": {
+        "username": "user",
+        "content": "hello",
+        "timestamp": "2026-09-17T09:04:30.967604+00:00"
+      },
+      "assistant": {
+        "content": "Hello! How can I help you today?",
+        "timestamp": "2026-09-17T09:04:30.967611+00:00"
+      }
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "session": {
+    "session_id": "58c866a0",
+    "started_at": "2026-09-17T11:13:07.592551+00:00",
+    "model": {
+      "name": "gemma3_270m_it",
+      "source": "local",
+      "model_id": "google/gemma-3-270m-it",
+      "local_path": "/Users/skingsle/Documents/llmbox/models/llms/google/gemma-3-270m-it",
+      "architecture": "gemma3_text",
+      "dtype": "bfloat16",
+      "device": "auto",
+      "trust_remote_code": false,
+      "supports_tool_calling": false,
+      "supports_structured_output": true,
+      "chat_template_kwargs": {}
+    },
+    "generation": {
+      "max_new_tokens": 512,
+      "temperature": 1.0,
+      "top_p": 0.95,
+      "top_k": 64,
+      "do_sample": true,
+      "repetition_penalty": 1.0
+    },
+    "system_prompt": "You are a helpful assistant."
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "user": {
+        "username": "user",
+        "content": "hello!",
+        "timestamp": "2026-09-17T11:13:10.460580+00:00"
+      },
+      "assistant": {
+        "content": "Hello! How can I help you today?",
+        "timestamp": "2026-09-17T11:13:10.460587+00:00"
+      }
+    },
+    {
+      "turn": 2,
+      "user": {
+        "username": "user",
+        "content": "what is your name?",
+        "timestamp": "2026-09-17T11:13:17.014733+00:00"
+      },
+      "assistant": {
+        "content": "I am Gemma, an open-weights AI model created by Google DeepMind.",
+        "timestamp": "2026-09-17T11:13:17.014740+00:00"
+      }
+    }
+  ]
+}

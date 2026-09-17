@@ -91,7 +91,7 @@ LLMBOX_APP/
 If you use, modify or distribute this lab material, you must properly cite or credit the author.
 
 *Recommended citation:*
-```Sara Kingsley. September 2026. LLMBox.```
+```Sara Kingsley. September 2026. LLMBox: https://github.com/sarakingsley/llmbox/```
 
 ## **License**
 

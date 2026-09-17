@@ -37,15 +37,22 @@ Prohibited uses of LLMBox include but are not limited to the following:
 ```
 LLMBOX_APP/
 │
+├──README.md
+├──LICENSE  
 ├──startllm.py      # run this in terminal to start the LLM 
 ├──structure.py    # creates pydantic models
+├──__init__.py
 │
-├──configurator/   # application configuration manager
-│    ├── main.py
-│    ├── config.py
-│    ├── rules.py
-│    ├── options.py
-│    └── output.py
+├──about/
+│     ├── quickstart.md
+│     └── university_students.md # forthcoming
+│
+├──config/   # application configuration manager
+│    ├── data/
+│    ├── mode/
+│    ├── model/
+│    ├── optimizer/
+│    └── config.yaml
 │ 
 ├──src/             # main application software directory
 │    ├── __init__.py
@@ -54,7 +61,7 @@ LLMBOX_APP/
 │    ├── modes.py
 │    ├── schema.py
 │    ├── sys_logger.py
-│     ├── tools.py
+│    ├── tools.py
 │    └──pydantic_models/
 │          ├── personrecords.py
 │          └── dogbreeds.py
@@ -70,7 +77,7 @@ LLMBOX_APP/
 │        └── meta/
 │            └── llama-3-1-instruct/
 │
-└──data/
+└──data/  
      ├──output/
      │     ├── config_logs/    
      │     ├── chat_logs/           # note: you can create training data 

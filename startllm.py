@@ -17,7 +17,7 @@
 '''
 
 """
-configurator.py
+startllm.py
 
 Single entry point for running google/gemma-3-270m-it or microsoft/phi-4
 (or any local checkout of either) in one of six modes, fully driven by a

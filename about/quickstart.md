@@ -39,7 +39,7 @@ To use LLMBox, you must create a `models` directory and download LLM model check
     ```
       python3 startllm.py model=phi4_instruct mode=generate model.source=local model.local_path=./models/llms/microsoft/phi-4-mini-instruct  tool_calling.enabled=true prompt="What is the weather in Boston?" 'tool_calling.tools=[{name: get_weather, description: "Get current weather", parameters: {type: object, properties: {location: {type: string}}}}]'```
  
- * **structured_output**: 
+ * **structured_output**: Note: to use this feature, first, you MUST create a Pydantic model. You can run the file `structure.py` to do this.
     ```
     python3 startllm.py model=gemma3_270m model.source=local model.local_path=./models/llms/google/gemma-3-270m-it mode=structured_output structured_output.strict=false \
     system_prompt="For each name in the user prompt use the structuredoutput format to print the name appropriately but make sure both names have a record" \

@@ -88,7 +88,7 @@ LLMBOX_APP/
 ```
 
 # **Attribution Statement | How to cite this LLM Software Application:**
-If you use, modify or distribute this lab material, you must properly cite or credit the author.
+If you use, modify or distribute this software application, you must properly cite or credit the author.
 
 *Recommended citation:*
 ```Sara Kingsley. September 2026. LLMBox: https://github.com/sarakingsley/llmbox/```

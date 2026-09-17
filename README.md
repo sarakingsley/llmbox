@@ -41,6 +41,7 @@ LLMBOX_APP/
 ├──LICENSE  
 ├──startllm.py      # run this in terminal to start the LLM 
 ├──structure.py    # creates pydantic models
+├──downloader.py   # use to add LLM models to application
 ├──__init__.py
 │
 ├──about/

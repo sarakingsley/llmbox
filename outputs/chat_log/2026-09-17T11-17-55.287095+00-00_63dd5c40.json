@@ -1,0 +1,54 @@
+{
+  "session": {
+    "session_id": "63dd5c40",
+    "started_at": "2026-09-17T11:17:55.287095+00:00",
+    "model": {
+      "name": "gemma3_270m_it",
+      "source": "local",
+      "model_id": "google/gemma-3-270m-it",
+      "local_path": "/Users/skingsle/Documents/llmbox/models/llms/google/gemma-3-270m-it",
+      "architecture": "gemma3_text",
+      "dtype": "bfloat16",
+      "device": "auto",
+      "trust_remote_code": false,
+      "supports_tool_calling": false,
+      "supports_structured_output": true,
+      "chat_template_kwargs": {}
+    },
+    "generation": {
+      "max_new_tokens": 512,
+      "temperature": 1.0,
+      "top_p": 0.95,
+      "top_k": 64,
+      "do_sample": true,
+      "repetition_penalty": 1.0
+    },
+    "system_prompt": "You are a helpful assistant."
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "user": {
+        "username": "user",
+        "content": "hello!",
+        "timestamp": "2026-09-17T11:17:58.093472+00:00"
+      },
+      "assistant": {
+        "content": "Hello! How can I help you today?",
+        "timestamp": "2026-09-17T11:17:58.093478+00:00"
+      }
+    },
+    {
+      "turn": 2,
+      "user": {
+        "username": "user",
+        "content": "what day is it?",
+        "timestamp": "2026-09-17T11:18:02.767738+00:00"
+      },
+      "assistant": {
+        "content": "The day is June 20, 2024.",
+        "timestamp": "2026-09-17T11:18:02.767746+00:00"
+      }
+    }
+  ]
+}

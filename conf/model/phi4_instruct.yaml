@@ -1,0 +1,26 @@
+# Defaulting to the 3.8B "Phi-4-mini-instruct" variant here (not the 14B
+# "microsoft/phi-4") since that's the checkout your chat_phi4mini.py script
+# already runs locally. Switch model_id to "microsoft/phi-4" if you want the
+# larger model instead.
+#
+# Note on tool calling: Phi-4-mini-instruct's own chat template renders tool
+# definitions as <|tool|>...<|/tool|> in the system prompt and expects a
+# "functools[...]"-prefixed JSON reply, rather than any OpenAI-style
+# structured tool-call object. mode=tool_calling here passes `tools=` through
+# to apply_chat_template exactly as it does for any model, so the template
+# handles the vendor-specific formatting -- but the *response* comes back as
+# plain text (possibly containing that functools[...] block) rather than a
+# parsed tool-call structure, since that parsing is specific to this model's
+# convention. chat_phi4mini.py's parse_tool_calls()/TOOL_REGISTRY show one
+# way to detect and dispatch it if you want that behavior here too.
+name: phi4_instruct
+source: local
+model_id: microsoft/Phi-4-mini-instruct
+local_path: ./models/llms/microsoft/Phi-4-mini-instruct
+architecture: phi3
+dtype: bfloat16
+device: auto
+trust_remote_code: true
+supports_tool_calling: true
+supports_structured_output: true
+chat_template_kwargs: {}

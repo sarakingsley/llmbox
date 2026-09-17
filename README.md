@@ -1,2 +1,2 @@
 # LLM BOX
-LLM Box Software Application for Building Customized AI Solutions
+LLM Box Software Application for Building Customized and **Affordable** AI Solutions.

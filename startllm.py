@@ -1,4 +1,21 @@
-#!/usr/bin/env python3
+'''
+    LLMBox -- A Software Application for Building Customized and Affordable AI Solutions.
+    Copyright (C) 2026  Sara Kingsley
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+'''
+
 """
 configurator.py
 
@@ -22,24 +39,24 @@ any of it can be swapped from the command line:
 
     # Chat with Gemma 3 270M-IT interactively (pulled from the HF hub, using
     # whatever's in your local HF cache or downloading it if not)
-    python configurator.py model=gemma3_270m mode=chat
+    python llmstart.py model=gemma3_270m mode=chat
 
     # Same, but loaded strictly from a local checkout -- never touches the
     # network, fails clearly if the path is wrong
-    python3 configurator.py model=gemma3_270m mode=chat model.source=local model.local_path=/Users/skingsle/Documents/llmbox/models/llms/google/gemma-3-270m-it
+    python3 llmstart.py model=gemma3_270m mode=chat model.source=local model.local_path=/Users/skingsle/Documents/llmbox/models/llms/google/gemma-3-270m-it
 
     # Phi-4-mini-instruct defaults to loading from ./models/llms/microsoft/
     # Phi-4-mini-instruct locally -- override the path for your machine, or
     # switch back to the hub with model.source=huggingface
-    python configurator.py model=phi4_instruct mode=chat \\
+    python3 llmstart.py model=phi4_instruct mode=chat \\
         model.local_path=/actual/path/to/Phi-4-mini-instruct
 
     # One-shot generation with Phi-4, higher temperature
-    python configurator.py model=phi4_instruct mode=generate \\
+    python3 llmstart.py model=phi4_instruct mode=generate \\
         generation.temperature=1.2 prompt="Explain the tides."
 
     # Tool calling with Phi-4
-    python configurator.py model=phi4_instruct mode=tool_calling \\
+    python3 llmstart.py model=phi4_instruct mode=tool_calling model.source=local model.local_path=/Users/skingsle/Documents/llmbox/models/llms/microsoft/phi-4-mini-instruct \\
         tool_calling.enabled=true prompt="What's the weather in Boston?" \\
         'tool_calling.tools=[{name: get_weather, description: "Get current weather", parameters: {type: object, properties: {location: {type: string}}}}]'
 

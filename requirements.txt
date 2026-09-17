@@ -1,0 +1,10 @@
+json
+datetime
+omegaconf
+hydra
+sentence-transformers
+huggingface_hub
+datasets
+transformers
+torch
+fire

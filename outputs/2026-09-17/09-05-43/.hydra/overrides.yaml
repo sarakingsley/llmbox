@@ -1,0 +1,8 @@
+- model=phi4_instruct
+- mode=tool_calling
+- model.source=local
+- model.local_path=./models/llms/microsoft/phi-4-mini-instruct
+- tool_calling.enabled=true
+- prompt=What is the weather in Boston?
+- 'tool_calling.tools=[{name: get_weather, description: "Get current weather", parameters:
+  {type: object, properties: {location: {type: string}}}}]'

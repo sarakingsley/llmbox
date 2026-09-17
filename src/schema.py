@@ -1,3 +1,21 @@
+'''
+    LLMBox -- A Software Application for Building Customized and Affordable AI Solutions.
+    Copyright (C) 2026  Sara Kingsley
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+'''
+
 """
 schema.py
 
@@ -44,6 +62,13 @@ class ModelConfig:
     trust_remote_code: bool = False
     supports_tool_calling: bool = False
     supports_structured_output: bool = False
+    # generic: mode=tool_calling passes tool defs to apply_chat_template via
+    #   a `tools=` kwarg, the way most function-calling chat templates expect.
+    # functools_prompt: for models whose template doesn't do that (e.g.
+    #   Phi-4-mini-instruct) -- tool defs go in the system prompt as
+    #   <|tool|>[...]<|/tool|>, and a "functools[...]"-prefixed reply is
+    #   parsed and dispatched locally. See GenerationManager.run_tool_turn.
+    tool_calling_format: str = "generic"       # generic | functools_prompt
     chat_template_kwargs: Dict[str, Any] = field(default_factory=dict)
 
 

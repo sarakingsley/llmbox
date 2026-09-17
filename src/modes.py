@@ -1,3 +1,21 @@
+'''
+    LLMBox -- A Software Application for Building Customized and Affordable AI Solutions.
+    Copyright (C) 2026  Sara Kingsley
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+'''
+
 """
 modes.py
 
@@ -109,15 +127,29 @@ class Modes:
                 "(model.supports_tool_calling=false); its chat template may "
                 "ignore the 'tools' argument entirely.", cfg.model.name,
             )
-        model, tokenizer, device = _load_model_and_tokenizer(cfg)
-        prompt = _resolve_prompt(cfg)
+        model, tokenizer, device = self.generator._load_model_and_tokenizer(cfg)
+        prompt = self.generator._resolve_prompt(cfg)
         tools = OmegaConf.to_container(cfg.tool_calling.tools, resolve=True)
+
+        if cfg.model.tool_calling_format == "functools_prompt":
+            system_content = self.generator.build_functools_system_prompt(cfg.system_prompt, tools)
+            messages = [{"role": "system", "content": system_content}]
+            messages.append({"role": "user", "content": prompt})
+
+            answer, tool_call_records = self.generator.run_tool_turn(model, tokenizer, device, messages, cfg)
+            if tool_call_records:
+                print("[info] Tool call(s) made:", file=sys.stderr)
+                for record in tool_call_records:
+                    print(f"  {record['name']}({record['arguments']}) -> {record['result']}", file=sys.stderr)
+            print(answer)
+            return
+
         messages = []
         if cfg.system_prompt:
             messages.append({"role": "system", "content": cfg.system_prompt})
         messages.append({"role": "user", "content": prompt})
 
-        answer = _generate_once(
+        answer = self.generator._generate_once(
             model, tokenizer, device, messages, cfg,
             tools=tools, tool_choice=cfg.tool_calling.tool_choice,
         )
@@ -198,6 +230,8 @@ class Modes:
         )
         if tokenizer.pad_token_id is None:
             tokenizer.pad_token = tokenizer.eos_token
+        if cfg.model.trust_remote_code:
+            self.generator._ensure_remote_code_compat()
         model = AutoModelForCausalLM.from_pretrained(
             model_path, dtype=dtype, trust_remote_code=cfg.model.trust_remote_code, local_files_only=local_files_only,
         )
@@ -214,7 +248,7 @@ class Modes:
             model = get_peft_model(model, lora_config)
             model.print_trainable_parameters()
         model.to(device)
-        conversations = self._load_conversations(cfg)
+        conversations = self.datamanager._load_conversations(cfg)
         if not conversations:
             raise ValueError(f"No conversations found under data.path='{cfg.data.path}' (data.type='{cfg.data.type}').")
         self.log.info("Loaded %d conversation(s).", len(conversations))

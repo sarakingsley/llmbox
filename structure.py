@@ -1,7 +1,27 @@
+'''
+    LLMBox -- A Software Application for Building Customized and Affordable AI Solutions.
+    Copyright (C) 2026  Sara Kingsley
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+'''
+
 from pathlib import Path
+from src.pydantic_models.personrecords import PersonRecord
 from pydantic import BaseModel
 
-import src.personrecords
+import src
+from src.pydantic_models import personrecord
 
 
 
@@ -40,7 +60,7 @@ if __name__ == "__main__":
 
     output = save_model_json(
         #config,
-        model=src.personrecords.PersonRecord(firstname="sara", lastname="king"),
+        model=PersonRecord(firstname="sara", lastname="king"),
         directory="./datasets/stroutjson/",
         filename="structuredoutput.json",
     )

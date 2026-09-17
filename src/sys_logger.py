@@ -1,15 +1,23 @@
-import json
+'''
+    LLMBox -- A Software Application for Building Customized and Affordable AI Solutions.
+    Copyright (C) 2026  Sara Kingsley
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+'''
+
 import logging
-import random
-import sys
-import uuid
 from datetime import datetime, timezone
-from pathlib import Path
-
-from omegaconf import OmegaConf
-
-from src.generation import GenerationManager
-from src.datasets import DataManager
 
 
 class Logger:

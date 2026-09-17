@@ -1,7 +1,7 @@
-# LLM BOX
-LLM Box Software Application for Building Customized and **Affordable** AI Solutions.
+# LLMBOX
+LLMBox Software Application for Building Customized and **Affordable** AI Solutions.
 
-# **Welcome to LLM Box -- a software application to facilitate low-cost, low-compute (no GPU) customation of LLMs!**
+# **Welcome to LLMBox -- a software application to facilitate low-cost, low-compute (no GPU) customation of LLMs!**
 
 This application was designed by Dr. Sara Kingsley (with coding Assistance from various LLMs). The idea and design are original works of the author.
 

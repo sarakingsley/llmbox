@@ -38,8 +38,6 @@ Prohibited uses of LLMBox include but are not limited to the following:
 LLMBOX_APP/
 │
 ├──startllm.py      # run this in terminal to start the LLM 
-├──modes.py 
-├──schema.py
 ├──structure.py    # creates pydantic models
 │
 ├──configurator/   # application configuration manager
@@ -50,11 +48,13 @@ LLMBOX_APP/
 │    └── output.py
 │ 
 ├──src/             # main application software directory
-│    ├── main.py
-│    ├── config.py
-│    ├── rules.py
-│    ├── options.py
-│    ├──  output.py
+│    ├── __init__.py
+│    ├── datasets.py
+│    ├── generation.py
+│    ├── modes.py
+│    ├── schema.py
+│    ├── sys_logger.py
+│     ├── tools.py
 │    └──pydantic_models/
 │          ├── personrecords.py
 │          └── dogbreeds.py

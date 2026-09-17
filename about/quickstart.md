@@ -47,10 +47,10 @@ To use LLMBox, you must create a `models` directory and download LLM model check
     structured_output.enabled=true \
     structured_output.schema_path=./datasets/stroutjson/structuredoutput.json```
  
-* **train**: 
+* **train**:  **THIS FEATURE IS NOT WORK AT THIS TIME.** expected soon.
     ```
     python3 startllm.py model=gemma3_270m model.source=local model.local_path=./models/llms/google/gemma-3-270m-it mode=train training.enabled=true data.path=<TRAIN DATA PATH>```
     
-* **finetune**: 
+* **finetune**:  **THIS FEATURE IS NOT WORK AT THIS TIME.** expected soon.
     ```
     python3 startllm.py model=gemma3_270m model.source=local model.local_path=./models/llms/google/gemma-3-270m-it mode=finetune training.enabled=true data.path=<TRAIN DATA PATH>```

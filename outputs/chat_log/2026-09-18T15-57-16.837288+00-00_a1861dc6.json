@@ -1,0 +1,55 @@
+{
+  "session": {
+    "session_id": "a1861dc6",
+    "started_at": "2026-09-18T15:57:16.837288+00:00",
+    "model": {
+      "name": "phi4_instruct",
+      "source": "local",
+      "model_id": "microsoft/Phi-4-mini-instruct",
+      "local_path": "/Users/skingsle/Documents/llmbox/models/llms/microsoft/phi-4-mini-instruct",
+      "architecture": "phi3",
+      "dtype": "bfloat16",
+      "device": "auto",
+      "trust_remote_code": false,
+      "supports_tool_calling": true,
+      "supports_structured_output": true,
+      "tool_calling_format": "functools_prompt",
+      "chat_template_kwargs": {}
+    },
+    "generation": {
+      "max_new_tokens": 512,
+      "temperature": 1.0,
+      "top_p": 0.95,
+      "top_k": 64,
+      "do_sample": true,
+      "repetition_penalty": 1.0
+    },
+    "system_prompt": "You are a helpful assistant."
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "user": {
+        "username": "user",
+        "content": "hello, good morning, what's your name?",
+        "timestamp": "2026-09-18T16:02:48.175737+00:00"
+      },
+      "assistant": {
+        "content": "Good morning! As an AI, I don't have a personal name, but you can simply call me Assistant. How can I help you today?",
+        "timestamp": "2026-09-18T16:02:48.175745+00:00"
+      }
+    },
+    {
+      "turn": 2,
+      "user": {
+        "username": "user",
+        "content": "how do i say hello in spanish?",
+        "timestamp": "2026-09-18T16:03:06.182737+00:00"
+      },
+      "assistant": {
+        "content": "In Spanish, \"hello\" is translated ascomplete, there's a typo in the code I provided. However, if you meant \"hello\" as in \"how do I say hello in Spanish?\", the answer is \"hola\".",
+        "timestamp": "2026-09-18T16:03:06.182745+00:00"
+      }
+    }
+  ]
+}

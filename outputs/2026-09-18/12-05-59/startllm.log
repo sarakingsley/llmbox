@@ -1,0 +1,69 @@
+[2026-09-18 12:05:59,912][__main__][INFO] - Resolved configuration:
+model:
+  name: phi4_instruct
+  source: local
+  model_id: microsoft/Phi-4-mini-instruct
+  local_path: /Users/skingsle/Documents/llmbox/models/llms/microsoft/phi-4-mini-instruct
+  architecture: phi3
+  dtype: bfloat16
+  device: auto
+  trust_remote_code: false
+  supports_tool_calling: true
+  supports_structured_output: true
+  tool_calling_format: functools_prompt
+  chat_template_kwargs: {}
+mode:
+  name: generate
+data:
+  type: chat_log
+  path: ../chat_log
+  min_turns: 1
+  eval_split: 0.1
+optimizer:
+  name: adamw
+  learning_rate: 2.0e-05
+  weight_decay: 0.0
+  betas:
+  - 0.9
+  - 0.999
+  eps: 1.0e-08
+  momentum: 0.0
+generation:
+  max_new_tokens: 512
+  temperature: 1.0
+  top_p: 0.95
+  top_k: 64
+  do_sample: true
+  repetition_penalty: 1.0
+tool_calling:
+  enabled: false
+  tool_choice: auto
+  tools: []
+structured_output:
+  enabled: false
+  schema_path: null
+  strict: true
+training:
+  enabled: false
+  method: full
+  epochs: 3.0
+  batch_size: 2
+  grad_accum_steps: 8
+  warmup_ratio: 0.03
+  max_length: 1024
+  lora_r: 8
+  lora_alpha: 16
+  lora_dropout: 0.05
+  logging_steps: 10
+  save_steps: 100
+  eval_steps: 100
+  output_dir: ./finetuned
+  merge_adapter: false
+prompt: Explain the tides
+prompt_file: null
+username: null
+system_prompt: You are a helpful assistant.
+seed: 42
+output_dir: outputs
+
+[2026-09-18 12:06:01,627][src.generation][INFO] - Loading 'phi4_instruct' (source=local, /Users/skingsle/Documents/llmbox/models/llms/microsoft/phi-4-mini-instruct) onto mps as bfloat16...

@@ -1,0 +1,55 @@
+{
+  "session": {
+    "session_id": "d3dc6b75",
+    "started_at": "2026-09-18T16:04:30.497624+00:00",
+    "model": {
+      "name": "gemma3_270m_it",
+      "source": "local",
+      "model_id": "google/gemma-3-270m-it",
+      "local_path": "/Users/skingsle/Documents/llmbox/models/llms/google/gemma-3-270m-it",
+      "architecture": "gemma3_text",
+      "dtype": "bfloat16",
+      "device": "auto",
+      "trust_remote_code": false,
+      "supports_tool_calling": false,
+      "supports_structured_output": true,
+      "tool_calling_format": "generic",
+      "chat_template_kwargs": {}
+    },
+    "generation": {
+      "max_new_tokens": 512,
+      "temperature": 1.0,
+      "top_p": 0.95,
+      "top_k": 64,
+      "do_sample": true,
+      "repetition_penalty": 1.0
+    },
+    "system_prompt": "You are a helpful assistant."
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "user": {
+        "username": "user",
+        "content": "hello, good morning, what is your name?",
+        "timestamp": "2026-09-18T16:04:38.909844+00:00"
+      },
+      "assistant": {
+        "content": "Hello! I am Gemma, a large languageAdvanced model created by Google DeepMind.",
+        "timestamp": "2026-09-18T16:04:38.909851+00:00"
+      }
+    },
+    {
+      "turn": 2,
+      "user": {
+        "username": "user",
+        "content": "how do i say hello in Spanish?",
+        "timestamp": "2026-09-18T16:04:49.669984+00:00"
+      },
+      "assistant": {
+        "content": "Here are a few ways to say \"hello\" in Spanish, depending on the context:\n\n*   **Hola:** This is the most common and versatile way to say \"hello.\"\n*   **Buenos días:** This पचास-centavos is a standard way to say \"good morning.\"\n*   **Buenas tardes:** This is another standard way to say \"good afternoon.\"\n*   **Buenas noches:** This is another standardığa common way to say \"good night.\"",
+        "timestamp": "2026-09-18T16:04:49.669991+00:00"
+      }
+    }
+  ]
+}

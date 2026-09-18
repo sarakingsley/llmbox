@@ -1,0 +1,43 @@
+{
+  "session": {
+    "session_id": "1584d5c1",
+    "started_at": "2026-09-18T14:39:15.265509+00:00",
+    "model": {
+      "name": "phi4_instruct",
+      "source": "local",
+      "model_id": "microsoft/Phi-4-mini-instruct",
+      "local_path": "/Users/skingsle/Documents/llmbox/models/llms/microsoft/phi-4-mini-instruct",
+      "architecture": "phi3",
+      "dtype": "bfloat16",
+      "device": "auto",
+      "trust_remote_code": false,
+      "supports_tool_calling": true,
+      "supports_structured_output": true,
+      "tool_calling_format": "functools_prompt",
+      "chat_template_kwargs": {}
+    },
+    "generation": {
+      "max_new_tokens": 512,
+      "temperature": 1.0,
+      "top_p": 0.95,
+      "top_k": 64,
+      "do_sample": true,
+      "repetition_penalty": 1.0
+    },
+    "system_prompt": "You are a helpful assistant."
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "user": {
+        "username": "user",
+        "content": "hello!",
+        "timestamp": "2026-09-18T14:39:19.491012+00:00"
+      },
+      "assistant": {
+        "content": "Hello! How can I assist you today?",
+        "timestamp": "2026-09-18T14:39:19.491020+00:00"
+      }
+    }
+  ]
+}

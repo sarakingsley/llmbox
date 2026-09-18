@@ -1,0 +1,10 @@
+- model=gemma3_270m
+- model.source=local
+- model.local_path=./models/llms/google/gemma-3-270m-it
+- mode=structured_output
+- structured_output.strict=false
+- system_prompt=For each name in the user prompt use the structuredoutput format to
+  print the name appropriately but make sure both names have a record
+- prompt=John Smith and Bob Whatever are going to the party
+- structured_output.enabled=true
+- structured_output.schema_path=/Users/skingsle/Documents/llmbox/llm_box/data/pydantic_models/structuredoutput.jsonn/structuredoutput.json

@@ -1,0 +1,55 @@
+{
+  "session": {
+    "session_id": "470de621",
+    "started_at": "2026-09-18T14:27:06.447277+00:00",
+    "model": {
+      "name": "phi4_instruct",
+      "source": "local",
+      "model_id": "microsoft/Phi-4-mini-instruct",
+      "local_path": "/Users/skingsle/Documents/llmbox/models/llms/microsoft/phi-4-mini-instruct",
+      "architecture": "phi3",
+      "dtype": "bfloat16",
+      "device": "auto",
+      "trust_remote_code": false,
+      "supports_tool_calling": true,
+      "supports_structured_output": true,
+      "tool_calling_format": "functools_prompt",
+      "chat_template_kwargs": {}
+    },
+    "generation": {
+      "max_new_tokens": 512,
+      "temperature": 1.0,
+      "top_p": 0.95,
+      "top_k": 64,
+      "do_sample": true,
+      "repetition_penalty": 1.0
+    },
+    "system_prompt": "You are a helpful assistant."
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "user": {
+        "username": "user",
+        "content": "hello!",
+        "timestamp": "2026-09-18T14:27:10.644340+00:00"
+      },
+      "assistant": {
+        "content": "Hello! How can I help you today?",
+        "timestamp": "2026-09-18T14:27:10.644355+00:00"
+      }
+    },
+    {
+      "turn": 2,
+      "user": {
+        "username": "user",
+        "content": "what days is it?",
+        "timestamp": "2026-09-18T14:27:18.691372+00:00"
+      },
+      "assistant": {
+        "content": "I apologize for any confusion, but I don't have the ability to directly access real-time data. However, you can easily find out the current day and time by looking at a calendar, checking your computer or phone, or using a digital clock.",
+        "timestamp": "2026-09-18T14:27:18.691379+00:00"
+      }
+    }
+  ]
+}

@@ -1,11 +1,11 @@
-
-
-
 import os
 import sys
-from collections.abc import Iterable, Iterator, Mapping, Sequence
-from typing import Any
 import json
+import random
+
+from collections.abc import Iterable, Iterator, Mapping, Sequence
+from pathlib import Path
+from typing import Any
 
 class DataUtility:
 
@@ -25,6 +25,112 @@ class DataUtility:
                 )
                 count += 1
         return count
+
+    @staticmethod
+    def split_and_save_jsonl(
+        examples: Iterable[Mapping[str, Any]],
+        output_directory: str | Path,
+        *,
+        train_fraction: float = 0.8,
+        seed: int = 42,
+        overwrite: bool = True,
+    ) -> dict[str, Any]:
+        """
+        Split formatted LLM examples and save train.jsonl and test.jsonl.
+
+        Args:
+            examples:
+                Iterable of dictionaries containing string-valued
+                "prompt" and "completion" fields.
+            output_directory:
+                Destination directory. Created if necessary.
+            train_fraction:
+                Fraction assigned to training, strictly between 0 and 1.
+                The test split receives the remainder.
+            seed:
+                Random seed for reproducibility with the same input order.
+            overwrite:
+                Whether existing output files may be replaced.
+
+        Returns:
+            Paths, row counts, and the actual training fraction.
+
+        Notes:
+            - Requires at least two examples.
+            - Keeps at least one example in each split.
+            - Loads serialized examples into memory to shuffle them.
+            - Preserves all fields in each example.
+        """
+        if (
+            isinstance(train_fraction, bool)
+            or not isinstance(train_fraction, (int, float))
+            or not 0 < train_fraction < 1
+        ):
+            raise ValueError("train_fraction must be a number between 0 and 1.")
+        output_directory = Path(output_directory).expanduser().resolve()
+        train_path = output_directory / "train.jsonl"
+        test_path = output_directory / "test.jsonl"
+        if not overwrite:
+            for path in (train_path, test_path):
+                if path.exists():
+                    raise FileExistsError(
+                        f"{path} already exists. Set overwrite=True to replace it."
+                    )
+        # Validate and serialize before creating output files.
+        lines: list[str] = []
+        for index, example in enumerate(examples):
+            if not isinstance(example, Mapping):
+                raise TypeError(f"Example {index} must be a mapping.")
+
+            for field in ("prompt", "completion"):
+                if field not in example:
+                    raise ValueError(f"Example {index} is missing {field!r}.")
+                if not isinstance(example[field], str):
+                    raise TypeError(
+                        f"Example {index}: {field!r} must be a string."
+                    )
+            # An empty prompt is valid for text-only language modeling.
+            if not example["completion"].strip():
+                raise ValueError(f"Example {index} has an empty completion.")
+            try:
+                lines.append(
+                    json.dumps(
+                        dict(example),
+                        ensure_ascii=False,
+                        allow_nan=False,
+                    ) + "\n"
+                )
+            except (TypeError, ValueError, OverflowError) as exc:
+                raise ValueError(
+                    f"Example {index} cannot be serialized as JSON: {exc}"
+                ) from exc
+        total_count = len(lines)
+        if total_count < 2:
+            raise ValueError("At least two examples are required.")
+        # Local RNG: does not modify Python's global random state.
+        random.Random(seed).shuffle(lines)
+        # Round down, then ensure both splits contain at least one example.
+        train_count = max(
+            1,
+            min(total_count - 1, int(total_count * train_fraction)),
+        )
+        test_count = total_count - train_count
+        output_directory.mkdir(parents=True, exist_ok=True)
+        mode = "w" if overwrite else "x"
+        with train_path.open(mode, encoding="utf-8") as train_file:
+            for index in range(train_count):
+                train_file.write(lines[index])
+        with test_path.open(mode, encoding="utf-8") as test_file:
+            for index in range(train_count, total_count):
+                test_file.write(lines[index])
+        return {
+            "train_path": train_path,
+            "test_path": test_path,
+            "train_count": train_count,
+            "test_count": test_count,
+            "total_count": total_count,
+            "actual_train_fraction": train_count / total_count,
+        }
 
     @staticmethod
     def standardize_llm_dataset(

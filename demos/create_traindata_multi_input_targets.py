@@ -20,7 +20,7 @@ from src.data_utilities import DataUtility
 
 datautility = DataUtility()
 
-'''
+
 rows = [
     {
         "title": "Package arrived damaged",
@@ -41,27 +41,3 @@ examples = list(
         ),
     )
 )
-'''
-
-TRAINDATA = "/Users/skingsle/Documents/llmbox/llm_box/demos/lsat_style_questions.csv"
-
-# StimulusPassage
-# QuestionStem
-examples = list(
-    datautility.standardize_llm_dataset(
-        rows,
-        text_columns=["StimulusPassage", "QuestionStem"],
-        target_columns=["OptionA",
-            "OptionB",
-            "OptionC",
-            "OptionD",
-            "OptionE",
-            "CorrectAnswer"],
-        instruction=(
-            "Choose the correct option. "
-            "Return JSON with keys CorrectAnswer."
-        ),
-    )
-)
-
-print(examples[0]["completion"])

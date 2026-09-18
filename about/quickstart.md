@@ -28,11 +28,11 @@ To use LLMBox, you must create a `models` directory and download LLM model check
  **Example Python Scripts**:
  * **chat**: 
     ```
-    python3 startllm.py model=phi4_instruct mode=chat model.source=local model.local_path=/llmbox/models/llms/microsoft/phi-4-mini-instruct```
+    python3 startllm.py model=phi4_instruct mode=chat model.source=local model.local_path=./models/llms/microsoft/phi-4-mini-instruct```
  
  *  **generate**: 
     ```
-    python3 startllm.py model=phi4_instruct mode=generate model.source=local model.local_path=/llmbox/models/llms/microsoft/phi-4-mini-instruct prompt="Explain the tides"```
+    python3 startllm.py model=phi4_instruct mode=generate model.source=local model.local_path=./models/llms/microsoft/phi-4-mini-instruct prompt="Explain the tides"```
  
  * **tool_calling**: **THIS FEATURE IS NOT WORK AT THIS TIME.** expected soon.
     ```
@@ -40,23 +40,15 @@ To use LLMBox, you must create a `models` directory and download LLM model check
  
  * **structured_output**: 
     ```
-    python3 startllm.py model=gemma3_270m model.source=local model.local_path=/Users/skingsle/Documents/llmbox/models/llms/google/gemma-3-270m-it mode=structured_output structured_output.strict=false \
+    python3 startllm.py model=gemma3_270m model.source=local model.local_path=./models/llms/google/gemma-3-270m-it mode=structured_output structured_output.strict=false \
     system_prompt="For each name in the user prompt use the structuredoutput format to print the name appropriately but make sure both names have a record" \
     prompt="John Smith and Bob Whatever are going to the party" \
     structured_output.enabled=true \
-    structured_output.schema_path=/llmbox/datasets/stroutjson/structuredoutput.json```
+    structured_output.schema_path=./datasets/stroutjson/structuredoutput.json```
  
 * **train**: 
     ```
-    python3 startllm.py model=gemma3_270m mode=structured_output structured_output.strict=false \
-    system_prompt="For each name in the user prompt use the structuredoutput format to print the name appropriately but make sure both names have a record" \
-    prompt="John Smith and Bob Whatever are going to the party" \
-    structured_output.enabled=true \
-    structured_output.schema_path=/llmbox/datasets/stroutjson/structuredoutput.json```
+    python3 startllm.py model=gemma3_270m model.source=local model.local_path=./models/llms/google/gemma-3-270m-it mode=train training.enabled=true data.path=<TRAIN DATA PATH>```
 * **finetune**: 
     ```
-    python3 startllm.py model=gemma3_270m mode=structured_output structured_output.strict=false \
-    system_prompt="For each name in the user prompt use the structuredoutput format to print the name appropriately but make sure both names have a record" \
-    prompt="John Smith and Bob Whatever are going to the party" \
-    structured_output.enabled=true \
-    structured_output.schema_path=/llmbox/datasets/stroutjson/structuredoutput.json```
+    python3 startllm.py model=gemma3_270m model.source=local model.local_path=./models/llms/google/gemma-3-270m-it mode=finetune training.enabled=true data.path=<TRAIN DATA PATH>```

@@ -17,14 +17,9 @@
 '''
 
 from pathlib import Path
-from src.pydantic_models.personrecords import PersonRecord
-from pydantic import BaseModel
-
 import src
-from src.pydantic_models import personrecord
-
-
-
+from src.pydantic_models import personrecords
+from pydantic import BaseModel
 
 def save_model_json(
     model: BaseModel,
@@ -54,14 +49,15 @@ class ModelConfig(BaseModel):
     temperature: float = 0.7
 
 '''
+
 if __name__ == "__main__":
     #config = ModelConfig(model="gemma3_270m")
     #config = src.personrecords.PersonRecord()
 
     output = save_model_json(
         #config,
-        model=PersonRecord(firstname="sara", lastname="king"),
-        directory="./datasets/stroutjson/",
+        model=personrecords.PersonRecord(firstname="sara", lastname="king"),
+        directory="./data/pydantic_models/",
         filename="structuredoutput.json",
     )
     print(f"Saved to {output.resolve()}")

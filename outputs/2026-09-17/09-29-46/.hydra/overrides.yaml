@@ -1,0 +1,4 @@
+- model=gemma3_270m
+- model.source=local
+- model.local_path=/Users/skingsle/Documents/llmbox/models/llms/google/gemma-3-270m-it
+- mode=finetune

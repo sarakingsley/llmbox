@@ -138,7 +138,6 @@ class TrainingConfig:
     output_dir: str = "./finetuned"
     merge_adapter: bool = False        # after LoRA training, also save an adapter-free merged copy
 
-
 @dataclass
 class DataConfig:
     """Where training/finetuning data comes from. One YAML file per source
@@ -148,13 +147,11 @@ class DataConfig:
     min_turns: int = 1                 # chat_log only: skip sessions with fewer turns than this
     eval_split: float = 0.1            # fraction of conversations held out for eval (0 disables it)
 
-
 @dataclass
 class ModeConfig:
     """Which of the six run modes to execute. One YAML file per mode under
     conf/mode/."""
     name: str = MISSING                # chat | generate | tool_calling | structured_output | train | finetune
-
 
 @dataclass
 class Config:
@@ -162,22 +159,18 @@ class Config:
     mode: ModeConfig = MISSING
     data: DataConfig = MISSING
     optimizer: OptimizerConfig = MISSING
-
     generation: GenerationConfig = field(default_factory=GenerationConfig)
     tool_calling: ToolCallingConfig = field(default_factory=ToolCallingConfig)
     structured_output: StructuredOutputConfig = field(default_factory=StructuredOutputConfig)
     training: TrainingConfig = field(default_factory=TrainingConfig)
-
     # Single-turn modes (generate / tool_calling / structured_output) read
     # their input from one of these; chat mode ignores them and reads stdin.
     prompt: Optional[str] = None
     prompt_file: Optional[str] = None
-
     username: Optional[str] = None
     system_prompt: str = "You are a helpful assistant."
     seed: int = 42
     output_dir: str = "outputs"        # chat session logs land under <output_dir>/chat_log
-
 
 def register_configs() -> None:
     """Register the schema so conf/config.yaml's `- config_schema` defaults

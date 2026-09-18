@@ -283,19 +283,15 @@ class Modes:
             report_to=[],
             remove_unused_columns=False,
         )
-
         trainer = Trainer(
             model=model, args=training_args, train_dataset=train_dataset, eval_dataset=eval_dataset,
             data_collator=collator, optimizers=(optimizer, None),
         )
-
         self.log.info("Starting %s (method=%s, optimizer=%s)...", cfg.mode.name, cfg.training.method, cfg.optimizer.name)
         trainer.train()
-
         trainer.save_model(cfg.training.output_dir)
         tokenizer.save_pretrained(cfg.training.output_dir)
         self.log.info("Saved to '%s'.", cfg.training.output_dir)
-
         if cfg.training.method == "lora" and cfg.training.merge_adapter:
             merged_model = model.merge_and_unload()
             merged_dir = Path(cfg.training.output_dir) / "merged"
@@ -303,12 +299,10 @@ class Modes:
             tokenizer.save_pretrained(merged_dir)
             self.log.info("Merged model saved to '%s'.", merged_dir)
 
-
     def run_train(self, cfg) -> None:
         if not cfg.training.enabled:
             raise ValueError("mode=train requires training.enabled=true")
         self._run_training(cfg, allow_lora=False)
-
 
     def run_finetune(self, cfg) -> None:
         if not cfg.training.enabled:

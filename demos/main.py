@@ -6,7 +6,6 @@ MODES: CHAT:
 python3 startllm.py model=phi4_instruct mode=chat model.source=local model.local_path=/Users/skingsle/Documents/llmbox/models/llms/microsoft/phi-4-mini-instruct
 python3 startllm.py model=gemma3_270m mode=chat model.source=local model.local_path=/Users/skingsle/Documents/llmbox/models/llms/google/gemma-3-270m-it
 
-MODES: GENERATE:
 '''
 
 import csv    # CSV: standard library only.
@@ -222,3 +221,4 @@ if proceed20 == "yes":
     print("   ")
     print("   ")
 else: pass
+print("END DEMO")

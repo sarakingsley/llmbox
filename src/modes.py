@@ -58,11 +58,11 @@ class Modes:
         self.dataloader = TrainingDataLoader()
         self.logger = Logger()
 
+    # --------------------------------------------------------------------------
+    # chat -- interactive multi-turn session, logged the same way gemma_chat.py
+    # logs sessions (one JSON file per session under <output_dir>/chat_log).
+    # --------------------------------------------------------------------------
     def run_chat(self, cfg) -> None:
-        # --------------------------------------------------------------------------
-        # chat -- interactive multi-turn session, logged the same way gemma_chat.py
-        # logs sessions (one JSON file per session under <output_dir>/chat_log).
-        # --------------------------------------------------------------------------
         model, tokenizer, device = self.generator._load_model_and_tokenizer(cfg)
         log_dir = Path(cfg.output_dir) / "chat_log"
         log_dir.mkdir(parents=True, exist_ok=True)
@@ -109,10 +109,10 @@ class Modes:
             print(f"assistant> {answer}\n")
         print(f"[info] Session saved to: {log_path}", file=sys.stderr)
 
+    # --------------------------------------------------------------------------
+    # generate -- single prompt in, single response out, no history kept.
+    # --------------------------------------------------------------------------
     def run_generate(self, cfg) -> None:
-        # --------------------------------------------------------------------------
-        # generate -- single prompt in, single response out, no history kept.
-        # --------------------------------------------------------------------------
         model, tokenizer, device = self.generator._load_model_and_tokenizer(cfg)
         prompt = self.generator._resolve_prompt(cfg)
         messages = []
@@ -121,11 +121,11 @@ class Modes:
         messages.append({"role": "user", "content": prompt})
         print(self.generator._generate_once(model, tokenizer, device, messages, cfg))
 
+    # --------------------------------------------------------------------------
+    # tool_calling -- single-turn generation with tool/function definitions
+    # passed through the chat template.
+    # --------------------------------------------------------------------------
     def run_tool_calling(self, cfg) -> None:
-        # --------------------------------------------------------------------------
-        # tool_calling -- single-turn generation with tool/function definitions
-        # passed through the chat template.
-        # --------------------------------------------------------------------------
         if not cfg.tool_calling.enabled:
             raise ValueError("mode=tool_calling requires tool_calling.enabled=true")
         if not cfg.model.supports_tool_calling:
@@ -137,10 +137,12 @@ class Modes:
         model, tokenizer, device = self.generator._load_model_and_tokenizer(cfg)
         prompt = self.generator._resolve_prompt(cfg)
         tools = OmegaConf.to_container(cfg.tool_calling.tools, resolve=True)
+
         if cfg.model.tool_calling_format == "functools_prompt":
             system_content = self.generator.build_functools_system_prompt(cfg.system_prompt, tools)
             messages = [{"role": "system", "content": system_content}]
             messages.append({"role": "user", "content": prompt})
+
             answer, tool_call_records = self.generator.run_tool_turn(model, tokenizer, device, messages, cfg)
             if tool_call_records:
                 print("[info] Tool call(s) made:", file=sys.stderr)
@@ -148,20 +150,22 @@ class Modes:
                     print(f"  {record['name']}({record['arguments']}) -> {record['result']}", file=sys.stderr)
             print(answer)
             return
+
         messages = []
         if cfg.system_prompt:
             messages.append({"role": "system", "content": cfg.system_prompt})
         messages.append({"role": "user", "content": prompt})
+
         answer = self.generator._generate_once(
             model, tokenizer, device, messages, cfg,
             tools=tools, tool_choice=cfg.tool_calling.tool_choice,
         )
         print(answer)
 
+    # --------------------------------------------------------------------------
+    # structured_output -- single-turn generation constrained to a JSON schema.
+    # --------------------------------------------------------------------------
     def run_structured_output(self, cfg) -> None:
-        # --------------------------------------------------------------------------
-        # structured_output -- single-turn generation constrained to a JSON schema.
-        # --------------------------------------------------------------------------
         if not cfg.structured_output.enabled:
             raise ValueError("mode=structured_output requires structured_output.enabled=true")
         if not cfg.model.supports_structured_output:
@@ -192,6 +196,148 @@ class Modes:
             except json.JSONDecodeError as e:
                 self.log.warning("Model output was not valid JSON (%s); printing raw output instead.", e)
         print(answer)
+
+    # --------------------------------------------------------------------------
+    # prepare_data -- process an original dataset for LLMBox compatibility,
+    # optionally format for the target model, add specialtokens/prefixes,
+    # split, tokenize, and verify readiness for training, finetuning or eval.
+    # --------------------------------------------------------------------------
+    def run_prepare_data(self, cfg) -> None:
+        """
+        Prepare a dataset for LLMBox jobs: format/standardize, optionally add special tokens/prefixes/suffixes,
+        split into train/test, tokenize and report readiness for downstream tasks. The config (cfg) should supply
+        the necessary arguments to indicate: (1) where the input dataset is; (2) where to write outputs; (3) columns; (4) etc.
+        """
+        import sys
+        from pathlib import Path
+        # 1. Load original input dataset:
+        # Accept either JSONL, JSON or CSV as original format for illustration
+
+        input_path = getattr(cfg.data, "raw_path", None) or getattr(cfg.data, "original_path", None) or getattr(cfg.data, "path", None)
+        if not input_path:
+            raise ValueError("No data.raw_path or data.original_path or data.path set in configuration.")
+        input_path = Path(input_path).expanduser()
+        output_dir = getattr(cfg.data, "output_dir", None) or getattr(cfg, "output_dir", None) or input_path.parent
+
+        # Detect file extension
+        ext = input_path.suffix.lower()
+        if ext == ".jsonl":
+            with input_path.open("r", encoding="utf-8") as f:
+                examples = [json.loads(line) for line in f if line.strip()]
+        elif ext == ".json":
+            with input_path.open("r", encoding="utf-8") as f:
+                raw = json.load(f)
+            # If dict of splits, default to train or concat all
+            if isinstance(raw, dict):
+                if "train" in raw:  # HuggingFace convention
+                    examples = list(raw["train"])
+                else:
+                    # Concatenate all split lists
+                    examples = []
+                    for val in raw.values():
+                        if isinstance(val, list):
+                            examples.extend(val)
+            elif isinstance(raw, list):
+                examples = raw
+            else:
+                raise ValueError("Unrecognized JSON dataset structure.")
+        elif ext == ".csv":
+            import csv
+            with input_path.open("r", encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                examples = list(reader)
+        else:
+            raise ValueError(f"prepare_data: Unknown input file extension: {ext}")
+        print(f"[info] Loaded {len(examples)} original records from {input_path}")
+        # 2. Standardize dataset format using DataTransformer:
+        #   Prefer explicit config for text_columns, target_columns, label_maps, instruction
+        text_columns = getattr(cfg.data, "text_columns", None)
+        target_columns = getattr(cfg.data, "target_columns", None)
+        label_maps = getattr(cfg.data, "label_maps", None)
+        instruction = getattr(cfg.data, "instruction", "")
+        # Users may override by passing these explicitly
+        standardized_iter = self.datamanager.standardize_llm_dataset(
+            examples,
+            text_columns=text_columns,
+            target_columns=target_columns,
+            instruction=instruction,
+            label_maps=label_maps,
+        )
+        # (2.5) Optionally, postprocess for model-specific special tokens, prefixes, suffixes
+        # We'll check if cfg.model has any such attributes
+        add_prefix = getattr(cfg.model, "add_prefix", None)
+        add_suffix = getattr(cfg.model, "add_suffix", None)
+        add_special = getattr(cfg.model, "add_specialtokens", None)
+        standardized_examples = []
+        for ex in standardized_iter:
+            # prefix/suffix/completion formatting:
+            if add_prefix:
+                ex["prompt"] = add_prefix + ex["prompt"]
+            if add_suffix:
+                ex["completion"] = ex["completion"] + add_suffix
+            # Optionally, add special tokens or custom callbacks if required
+            if add_special:
+                special_tokens = add_special if isinstance(add_special, list) else [add_special]
+                ex["special_tokens"] = special_tokens
+            standardized_examples.append(ex)
+        print(f"[info] Standardized to {len(standardized_examples)} prompt/completion records.")
+        # 3. Split dataset into train and test splits & write JSONL output
+        train_fraction = getattr(cfg.data, "train_fraction", None) or getattr(cfg.data, "split", None)
+        if not train_fraction:
+            train_fraction = 0.8  # Default
+        seed = getattr(cfg, "seed", 42)
+        result = self.datamanager.split_and_save_jsonl(
+            standardized_examples,
+            output_directory=output_dir,
+            train_fraction=train_fraction,
+            seed=seed,
+            overwrite=True
+        )
+        print(f"[info] Train/test split complete: train={result['train_count']} test={result['test_count']} saved at {output_dir}")
+        # 4. Tokenize train/test to verify readiness for train/finetune/eval
+        # Load a tokenizer (respecting model config)
+        from transformers import AutoTokenizer
+        model_path = getattr(cfg.model, "local_path", None) or getattr(cfg.model, "model_id", None)
+        local_files_only = cfg.model.source == "local"
+        if not model_path:
+            raise ValueError("prepare_data: model.local_path or model.model_id not set.")
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path,
+            trust_remote_code=getattr(cfg.model, "trust_remote_code", False),
+            local_files_only=local_files_only,
+        )
+        if tokenizer.pad_token_id is None:
+            tokenizer.pad_token = tokenizer.eos_token
+        dataloader = TrainingDataLoader()
+        # Tokenize a small sample from train & test
+        train_path = result['train_path']
+        test_path = result['test_path']
+        for split_name, path in [("train", train_path), ("test", test_path)]:
+            # Only check if file is nonempty
+            with open(path, 'r', encoding='utf-8') as f:
+                covered = [json.loads(line) for line in f if line.strip()]
+            if not covered:
+                print(f"[warn] {split_name} split is empty!", file=sys.stderr)
+                continue
+            # Wrap each record as a conversation for loader
+            conversations = []
+            for rec in covered:
+                try:
+                    conversation = dataloader._record_to_conversation(rec)
+                    conversations.append(conversation)
+                except Exception as e:
+                    print(f"[warn] Could not convert record to conversation: {e}", file=sys.stderr)
+            # Tokenize a subset (or all if small)
+            max_length = getattr(cfg.training, "max_length", 1024)
+            n_check = min(10, len(conversations))
+            subset = conversations[:n_check]
+            try:
+                dataset = dataloader._build_dataset(subset, tokenizer, max_length)
+                print(f"[info] {split_name} split: Successfully tokenized {len(dataset)} examples; ready for training/eval.")
+            except Exception as e:
+                print(f"[error] {split_name}: tokenization failed: {e}", file=sys.stderr)
+                raise
+        print("[info] Data preparation complete. Dataset is ready for LLMBox jobs.")
 
     # --------------------------------------------------------------------------
     # train / finetune -- shared SFT trainer. 'train' only allows full weight
@@ -261,6 +407,7 @@ class Modes:
         eval_dataset = self.dataloader._build_dataset(eval_conversations, tokenizer, cfg.training.max_length) if eval_conversations else None
         collator = self.dataloader._make_collator(tokenizer.pad_token_id)
         optimizer = self._build_optimizer(cfg, model)
+
         training_args = TrainingArguments(
             output_dir=cfg.training.output_dir,
             num_train_epochs=cfg.training.epochs,

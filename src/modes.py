@@ -305,12 +305,26 @@ class Modes:
         #else:
             #raise ValueError(f"prepare_data: Unknown input file extension: {ext}")
         print(f"[info] Loaded {len(examples)} original records from {input_path}")
+
         # 2. Standardize dataset format using DataTransformer:
         #   Prefer explicit config for text_columns, target_columns, label_maps, instruction
-        text_columns = getattr(cfg.data, "text_columns", None)
-        target_columns = getattr(cfg.data, "target_columns", None)
-        label_maps = getattr(cfg.data, "label_maps", None)
-        instruction = getattr(cfg.data, "instruction", "")
+        #text_columns = getattr(cfg.data, "text_columns", None)       # sk edited sept. 19 2026 around 6;26 pm ET
+        #target_columns = getattr(cfg.data, "target_columns", None)   # sk edited sept. 19 2026 around 6;26 pm ET
+        #label_maps = getattr(cfg.data, "label_maps", None)           # sk edited sept. 19 2026 around 6;26 pm ET
+        #instruction = getattr(cfg.data, "instruction", "")           # sk edited sept. 19 2026 around 6;26 pm ET
+        def _plain(value):
+            """OmegaConf container -> plain Python; empty ([], {}, "") -> None."""
+            if value is None:
+                return None
+            if OmegaConf.is_config(value):
+                value = OmegaConf.to_container(value, resolve=True)
+            return value or None
+
+        text_columns = _plain(getattr(cfg.data, "text_columns", None))
+        target_columns = _plain(getattr(cfg.data, "target_columns", None))
+        label_maps = _plain(getattr(cfg.data, "label_maps", None))
+        instruction = getattr(cfg.data, "instruction", "") or ""
+
         # Users may override by passing these explicitly
         standardized_iter = self.datamanager.standardize_llm_dataset(
             examples,

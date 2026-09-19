@@ -239,7 +239,6 @@ class DataTransformer:
         label_maps:
             Optional mappings for selected target columns. For example:
                 {"label": {0: "negative", 1: "positive"}}
-
             Every encountered label must appear in its mapping.
 
         Important behavior:
@@ -258,7 +257,6 @@ class DataTransformer:
                 "For a dataset dictionary, select a split such as "
                 "dataset['train']."
             )
-
         if isinstance(dataset, (str, bytes, bytearray)):
             raise TypeError(
                 "dataset must contain rows, not a path or string. "
@@ -423,35 +421,27 @@ class DataTransformer:
     ) -> list[str]:
         """
         Validate and serialize all rows before opening destination files.
-
         This prevents a malformed example from truncating an existing file.
         It deliberately uses memory proportional to the serialized dataset.
-
         Returned strings already contain their JSONL newline.
         """
         if isinstance(examples, (Mapping, str, bytes, bytearray)):
             raise TypeError(
                 "examples must be an iterable of row mappings."
             )
-
         lines: list[str] = []
-
         for index, example in enumerate(examples):
             try:
                 if not isinstance(example, Mapping):
                     raise TypeError("each example must be a mapping")
-
                 if require_prompt_completion:
                     DataTransformer._validate_prompt_completion(example)
-
                 serialized_example = DataTransformer._json_text(dict(example))
                 lines.append(serialized_example + "\n")
-
             except (TypeError, ValueError, OverflowError) as exc:
                 raise ValueError(
                     f"Example {index}: {exc}"
                 ) from exc
-
         return lines
 
     @staticmethod
@@ -463,37 +453,28 @@ class DataTransformer:
     ) -> int:
         """
         Write JSON-serializable mappings, one per line.
-
         Nested fields such as messages are supported.
         Parent directories are created if necessary.
-
         All examples are serialized before opening the output file.
         This is not an atomic write: an I/O failure can leave a partial file.
-
         Return the number of examples written.
         """
         destination_path = Path(path).expanduser()
-
         if not overwrite and destination_path.exists():
             raise FileExistsError(
                 f"{destination_path} already exists. "
                 "Set overwrite=True to replace it."
             )
-
         lines = DataTransformer._serialize_examples(examples)
-
         destination_path.parent.mkdir(parents=True, exist_ok=True)
-
         # "x" also prevents overwriting a file created after the earlier check.
         file_mode = "w" if overwrite else "x"
-
         with destination_path.open(
             file_mode,
             encoding="utf-8",
             newline="\n",
         ) as destination:
             destination.writelines(lines)
-
         return len(lines)
 
     @staticmethod
@@ -507,19 +488,16 @@ class DataTransformer:
     ) -> dict[str, Any]:
         """
         Shuffle examples and write train.jsonl and test.jsonl.
-
         Requirements:
             - At least two examples.
             - String-valued prompt and non-empty completion fields.
             - JSON-serializable values in all retained fields.
-
         Behavior:
             - Preserves all example fields, including text and messages.
             - Uses a local RNG, leaving global random state unchanged.
             - Keeps at least one example in each split.
             - Loads serialized examples into memory.
             - Validates all examples before opening output files.
-
         Limitations:
             - This is a row-level random split, not a grouped or stratified split.
             - Writes are not atomic, either individually or as a pair.
@@ -533,16 +511,13 @@ class DataTransformer:
             raise ValueError(
                 "train_fraction must be a number strictly between 0 and 1."
             )
-
         if isinstance(seed, bool) or not isinstance(seed, int):
             raise TypeError("seed must be an integer.")
-
         output_directory = (
             Path(output_directory).expanduser().resolve()
         )
         train_path = output_directory / "train.jsonl"
         test_path = output_directory / "test.jsonl"
-
         if not overwrite:
             for path in (train_path, test_path):
                 if path.exists():
@@ -550,20 +525,15 @@ class DataTransformer:
                         f"{path} already exists. "
                         "Set overwrite=True to replace it."
                     )
-
         lines = DataTransformer._serialize_examples(
             examples,
             require_prompt_completion=True,
         )
-
         total_count = len(lines)
-
         if total_count < 2:
             raise ValueError("At least two examples are required.")
-
         local_random_generator = random.Random(seed)
         local_random_generator.shuffle(lines)
-
         # Round down, then clamp so neither split is empty.
         requested_train_count = int(total_count * train_fraction)
         train_count = max(
@@ -571,10 +541,8 @@ class DataTransformer:
             min(total_count - 1, requested_train_count),
         )
         test_count = total_count - train_count
-
         output_directory.mkdir(parents=True, exist_ok=True)
         file_mode = "w" if overwrite else "x"
-
         with train_path.open(
             file_mode,
             encoding="utf-8",
@@ -582,7 +550,6 @@ class DataTransformer:
         ) as train_file:
             for index in range(train_count):
                 train_file.write(lines[index])
-
         with test_path.open(
             file_mode,
             encoding="utf-8",
@@ -590,7 +557,6 @@ class DataTransformer:
         ) as test_file:
             for index in range(train_count, total_count):
                 test_file.write(lines[index])
-
         return {
             "train_path": train_path,
             "test_path": test_path,

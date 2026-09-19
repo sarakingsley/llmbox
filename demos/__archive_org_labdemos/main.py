@@ -26,10 +26,12 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.data_utilities import DataUtility
-from src.downloader import ModelDownloader
 
-datautility = DataUtility()
+from src.downloader import ModelDownloader
+from src.data_services import DataTransformer
+
+
+datautility = DataTransformer()
 modeldownloader = ModelDownloader()
 
 TRAINDATA = "demos/lsat_style_questions2.csv"

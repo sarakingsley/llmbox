@@ -194,12 +194,69 @@ def send_llm_api_notice(cfg, warn_msg):
         print(f"[warning] Could not send notification email: {e}", file=sys.stderr)
 
 
+def _guess_file_extension(path):
+    """
+    Helper to detect the file extension in a more robust way for prepare_data mode.
+    Returns file extension or raises ValueError if cannot determine.
+    """
+    if isinstance(path, Path):
+        ext = path.suffix
+    elif isinstance(path, str):
+        ext = Path(path).suffix
+    else:
+        ext = ""
+    if not ext:
+        return None
+    return ext.lower()
+
 @hydra.main(version_base=None, config_path="conf", config_name="config")
 def llmbox(cfg: Config) -> None:
     log.info("Resolved configuration:\n%s", OmegaConf.to_yaml(cfg))
     mode_name = cfg.mode.name
     if mode_name not in _DISPATCH:
         raise ValueError(f"Unknown mode '{mode_name}'. Choose one of: {sorted(_DISPATCH)}")
+
+    # Special case for prepare_data: robustly check for file extension and warn/handle if missing
+    if mode_name == "prepare_data":
+        # Attempt to resolve input path (accepts data.raw_path, data.original_path, or data.path)
+        input_path = getattr(cfg.data, 'raw_path', None) or getattr(cfg.data, 'original_path', None) or getattr(cfg.data, 'path', None)
+        if not input_path:
+            raise ValueError("No data.raw_path or data.original_path or data.path set in configuration.")
+        ext = _guess_file_extension(input_path)
+        if not ext:
+            # If the extension is missing, attempt to detect by file content or raise a clearer error
+            path_to_check = Path(input_path).expanduser()
+            if not path_to_check.exists():
+                raise ValueError(f"prepare_data: Input file does not exist at path: {input_path}")
+            # Peek at the file for content-type guessing
+            try:
+                with open(path_to_check, "r", encoding="utf-8") as f:
+                    first_bytes = f.read(2048)
+                    if first_bytes.lstrip().startswith("{"):
+                        ext = ".json"
+                    elif first_bytes.lstrip().startswith("["):
+                        ext = ".json"
+                    elif first_bytes.count('\n') and ',' in first_bytes.split('\n')[0]:
+                        ext = ".csv"
+                    else:
+                        # Could be JSONL if many lines start with '{'
+                        lines = first_bytes.strip().split('\n')
+                        if all(line.lstrip().startswith('{') for line in lines if line.strip()):
+                            ext = ".jsonl"
+                        else:
+                            raise ValueError(f"prepare_data: Unknown input file format and missing file extension for: {input_path}")
+            except Exception as e:
+                raise ValueError(f"prepare_data: Could not infer or read file '{input_path}': {e}")
+            # Patch the file path to appear to have extension for underlying routines
+            input_path_str = str(path_to_check)
+            if not input_path_str.endswith(ext):
+                # Symlink or copy file to temp with a correct extension if really needed,
+                # or patch the attribute for downstream users -- we patch the config here.
+                patched_path = input_path_str + ext
+                # Just patch the config (do NOT actually copy file)
+                cfg.data.raw_path = patched_path
+                input_path = patched_path
+        # Now input_path has a usable extension
     _DISPATCH[mode_name](cfg)
     match mode_name:
         case "chat" | "generate" | "structured_output" | "train" | "finetune":

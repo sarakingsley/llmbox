@@ -70,6 +70,10 @@ class Modes:
         self.dataloader = TrainingDataLoader()
         self.logger = Logger()
 
+    def _make_dataloader(self, cfg):
+        strategy = getattr(cfg.model, "assistant_mask_strategy", "verified_prefix")
+        return TrainingDataLoader(assistant_mask_strategy=strategy)
+
     # --------------------------------------------------------------------------
     # chat -- interactive multi-turn session, logged the same way gemma_chat.py
     # logs sessions (one JSON file per session under <output_dir>/chat_log).
@@ -378,7 +382,10 @@ class Modes:
         )
         if tokenizer.pad_token_id is None:
             tokenizer.pad_token = tokenizer.eos_token
-        dataloader = TrainingDataLoader()
+
+        #dataloader = TrainingDataLoader()                  # sk edit: sept. 19 2026 around 7:17 PM EST
+        dataloader = self._make_dataloader(cfg)
+
         # Tokenize a small sample from train & test
         train_path = result['train_path']
         test_path = result['test_path']
@@ -460,6 +467,7 @@ class Modes:
             model = get_peft_model(model, lora_config)
             model.print_trainable_parameters()
         model.to(device)
+        self.dataloader = self._make_dataloader(cfg)                    # sk edited: sept. 19 2026 around 7:18 PM EST
         conversations = self.dataloader._load_conversations(cfg)
         if not conversations:
             raise ValueError(f"No conversations found under data.path='{cfg.data.path}' (data.type='{cfg.data.type}').")

@@ -650,19 +650,15 @@ class CausalLMCollator:
             len(example["input_ids"])
             for example in batch
         )
-
         padded_inputs: list[list[int]] = []
         padded_labels: list[list[int]] = []
         attention_masks: list[list[int]] = []
-
         for example in batch:
             # Make new lists rather than modifying the stored dataset.
             token_ids = list(example["input_ids"])
             target_ids = list(example["labels"])
-
             sequence_length = len(token_ids)
             padding_length = batch_max_length - sequence_length
-
             padded_inputs.append(
                 token_ids + [self.pad_token_id] * padding_length
             )
@@ -672,7 +668,6 @@ class CausalLMCollator:
             attention_masks.append(
                 [1] * sequence_length + [0] * padding_length
             )
-
         return {
             "input_ids": torch.tensor(
                 padded_inputs,
@@ -713,7 +708,6 @@ class TrainingDataLoader:
         assistant_mask_strategy: str = "template",
     ) -> None:
         allowed_strategies = {"template", "verified_prefix"}
-
         if assistant_mask_strategy not in allowed_strategies:
             raise ValueError(
                 "assistant_mask_strategy must be "

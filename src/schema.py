@@ -70,6 +70,11 @@ class ModelConfig:
     #   parsed and dispatched locally. See GenerationManager.run_tool_turn.
     tool_calling_format: str = "generic"       # generic | functools_prompt
     chat_template_kwargs: Dict[str, Any] = field(default_factory=dict)
+    # How to find assistant tokens for loss masking (see TrainingDataLoader):
+        #   template        -> template must contain {% generation %} blocks
+        #   verified_prefix -> infer spans from exact token-prefix matches
+        # Gemma 3 and Phi-4-mini templates have no generation blocks.
+    assistant_mask_strategy: str = "verified_prefix"   # template | verified_prefix
     # prepare_data: model-specific data formatting options
     add_prefix: Optional[str] = None           # for prepare_data - string to prepend to prompt
     add_suffix: Optional[str] = None           # for prepare_data - string to append to completion

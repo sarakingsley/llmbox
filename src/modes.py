@@ -214,6 +214,38 @@ class Modes:
     # optionally format for the target model, add specialtokens/prefixes,
     # split, tokenize, and verify readiness for training, finetuning or eval.
     # --------------------------------------------------------------------------
+    @staticmethod
+    def _load_json_or_jsonl(path: Path) -> list:
+        """Load a .json or .jsonl file, whichever it actually is."""
+        text = path.read_text(encoding="utf-8-sig")
+        try:
+            raw = json.loads(text)
+        except json.JSONDecodeError as whole_file_err:
+            # Not a single JSON document -> try JSON Lines (one object per line)
+            examples = []
+            for lineno, line in enumerate(text.splitlines(), start=1):
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    examples.append(json.loads(line))
+                except json.JSONDecodeError as e:
+                    raise ValueError(
+                        f"{path} is neither valid JSON ({whole_file_err}) nor valid "
+                        f"JSON Lines (line {lineno}: {e.msg})."
+                    ) from e
+            return examples
+
+        if isinstance(raw, list):
+            return raw
+        if isinstance(raw, dict):
+            if "train" in raw:                      # HuggingFace-style splits
+                return list(raw["train"])
+            if raw and all(isinstance(v, list) for v in raw.values()):
+                return [ex for v in raw.values() for ex in v]
+            return [raw]                            # a single record
+        raise ValueError("Unrecognized JSON dataset structure.")
+
     def run_prepare_data(self, cfg) -> None:
         """
         Prepare a dataset for LLMBox jobs: format/standardize, optionally add special tokens/prefixes/suffixes,
@@ -230,8 +262,8 @@ class Modes:
             raise ValueError("No data.raw_path or data.original_path or data.path set in configuration.")
         input_path = Path(input_path).expanduser()
         output_dir = getattr(cfg.data, "output_dir", None) or getattr(cfg, "output_dir", None) or input_path.parent
-
-        # Detect file extension
+        '''
+         # Detect file extension
         ext = input_path.suffix.lower()
         if ext == ".jsonl":
             with input_path.open("r", encoding="utf-8") as f:
@@ -258,8 +290,20 @@ class Modes:
             with input_path.open("r", encoding="utf-8") as f:
                 reader = csv.DictReader(f)
                 examples = list(reader)
+        '''
+        # Detect file format. Content wins over extension: a ".json" file
+                # may really be JSON Lines.
+        ext = input_path.suffix.lower()
+        if ext in (".json", ".jsonl"):
+            examples = self._load_json_or_jsonl(input_path)
+        elif ext == ".csv":
+            import csv
+            with input_path.open("r", encoding="utf-8") as f:
+                examples = list(csv.DictReader(f))
         else:
             raise ValueError(f"prepare_data: Unknown input file extension: {ext}")
+        #else:
+            #raise ValueError(f"prepare_data: Unknown input file extension: {ext}")
         print(f"[info] Loaded {len(examples)} original records from {input_path}")
         # 2. Standardize dataset format using DataTransformer:
         #   Prefer explicit config for text_columns, target_columns, label_maps, instruction

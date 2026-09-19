@@ -122,10 +122,10 @@ class OptimizerConfig:
 class TrainingConfig:
     """Shared by both the 'train' (continued pretraining, full weights only)
     and 'finetune' (parameter-efficient or full) modes.
-    New in 2024: method supports additional techniques beyond LoRA.
+    New: method supports additional techniques beyond LoRA.
     """
     enabled: bool = False
-    method: str = "full"               # full | lora | adapters | bitfit | freeze | prefix | qlora
+    method: str = "lora"               # full | lora | adapters | bitfit | freeze | prefix | qlora
     epochs: float = 3.0
     batch_size: int = 2
     grad_accum_steps: int = 8

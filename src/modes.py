@@ -37,9 +37,15 @@ from pathlib import Path
 from omegaconf import OmegaConf
 
 # import LLMBOX application software:
-from src.generation import GenerationManager
-from src.datasets import DataManager
 from src.sys_logger import Logger
+from src.generation import GenerationManager
+from src.data_services import (
+    DataTransformer,
+    CausalLMCollator,
+    TokenizedChatDataset,
+    TrainingDataLoader
+)
+
 
 
 class Modes:
@@ -48,14 +54,15 @@ class Modes:
         self.log = logging.getLogger(__name__)
         self.IGNORE_INDEX = -100
         self.generator = GenerationManager()
-        self.datamanager = DataManager()
+        self.datamanager = DataTransformer()
+        self.dataloader = TrainingDataLoader()
         self.logger = Logger()
 
-    # --------------------------------------------------------------------------
-    # chat -- interactive multi-turn session, logged the same way gemma_chat.py
-    # logs sessions (one JSON file per session under <output_dir>/chat_log).
-    # --------------------------------------------------------------------------
     def run_chat(self, cfg) -> None:
+        # --------------------------------------------------------------------------
+        # chat -- interactive multi-turn session, logged the same way gemma_chat.py
+        # logs sessions (one JSON file per session under <output_dir>/chat_log).
+        # --------------------------------------------------------------------------
         model, tokenizer, device = self.generator._load_model_and_tokenizer(cfg)
         log_dir = Path(cfg.output_dir) / "chat_log"
         log_dir.mkdir(parents=True, exist_ok=True)
@@ -102,10 +109,10 @@ class Modes:
             print(f"assistant> {answer}\n")
         print(f"[info] Session saved to: {log_path}", file=sys.stderr)
 
-    # --------------------------------------------------------------------------
-    # generate -- single prompt in, single response out, no history kept.
-    # --------------------------------------------------------------------------
     def run_generate(self, cfg) -> None:
+        # --------------------------------------------------------------------------
+        # generate -- single prompt in, single response out, no history kept.
+        # --------------------------------------------------------------------------
         model, tokenizer, device = self.generator._load_model_and_tokenizer(cfg)
         prompt = self.generator._resolve_prompt(cfg)
         messages = []
@@ -114,11 +121,11 @@ class Modes:
         messages.append({"role": "user", "content": prompt})
         print(self.generator._generate_once(model, tokenizer, device, messages, cfg))
 
-    # --------------------------------------------------------------------------
-    # tool_calling -- single-turn generation with tool/function definitions
-    # passed through the chat template.
-    # --------------------------------------------------------------------------
     def run_tool_calling(self, cfg) -> None:
+        # --------------------------------------------------------------------------
+        # tool_calling -- single-turn generation with tool/function definitions
+        # passed through the chat template.
+        # --------------------------------------------------------------------------
         if not cfg.tool_calling.enabled:
             raise ValueError("mode=tool_calling requires tool_calling.enabled=true")
         if not cfg.model.supports_tool_calling:
@@ -130,12 +137,10 @@ class Modes:
         model, tokenizer, device = self.generator._load_model_and_tokenizer(cfg)
         prompt = self.generator._resolve_prompt(cfg)
         tools = OmegaConf.to_container(cfg.tool_calling.tools, resolve=True)
-
         if cfg.model.tool_calling_format == "functools_prompt":
             system_content = self.generator.build_functools_system_prompt(cfg.system_prompt, tools)
             messages = [{"role": "system", "content": system_content}]
             messages.append({"role": "user", "content": prompt})
-
             answer, tool_call_records = self.generator.run_tool_turn(model, tokenizer, device, messages, cfg)
             if tool_call_records:
                 print("[info] Tool call(s) made:", file=sys.stderr)
@@ -143,22 +148,20 @@ class Modes:
                     print(f"  {record['name']}({record['arguments']}) -> {record['result']}", file=sys.stderr)
             print(answer)
             return
-
         messages = []
         if cfg.system_prompt:
             messages.append({"role": "system", "content": cfg.system_prompt})
         messages.append({"role": "user", "content": prompt})
-
         answer = self.generator._generate_once(
             model, tokenizer, device, messages, cfg,
             tools=tools, tool_choice=cfg.tool_calling.tool_choice,
         )
         print(answer)
 
-    # --------------------------------------------------------------------------
-    # structured_output -- single-turn generation constrained to a JSON schema.
-    # --------------------------------------------------------------------------
     def run_structured_output(self, cfg) -> None:
+        # --------------------------------------------------------------------------
+        # structured_output -- single-turn generation constrained to a JSON schema.
+        # --------------------------------------------------------------------------
         if not cfg.structured_output.enabled:
             raise ValueError("mode=structured_output requires structured_output.enabled=true")
         if not cfg.model.supports_structured_output:
@@ -167,10 +170,8 @@ class Modes:
                 "(model.supports_structured_output=false); results may not "
                 "reliably follow the schema.", cfg.model.name,
             )
-
         model, tokenizer, device = self.generator._load_model_and_tokenizer(cfg)
         prompt = self.generator._resolve_prompt(cfg)
-
         schema_instruction = ""
         if cfg.structured_output.schema_path:
             schema_text = Path(cfg.structured_output.schema_path).read_text(encoding="utf-8")
@@ -178,22 +179,18 @@ class Modes:
                 "\n\nRespond with ONLY a single JSON object that strictly matches "
                 f"this JSON Schema, with no other text:\n{schema_text}"
             )
-
         system_content = (cfg.system_prompt or "") + schema_instruction
         messages = []
         if system_content.strip():
             messages.append({"role": "system", "content": system_content.strip()})
         messages.append({"role": "user", "content": prompt})
-
         answer = self.generator._generate_once(model, tokenizer, device, messages, cfg)
-
         if cfg.structured_output.strict:
             try:
                 print(json.dumps(json.loads(answer), indent=2))
                 return
             except json.JSONDecodeError as e:
                 self.log.warning("Model output was not valid JSON (%s); printing raw output instead.", e)
-
         print(answer)
 
     # --------------------------------------------------------------------------
@@ -247,7 +244,7 @@ class Modes:
             model = get_peft_model(model, lora_config)
             model.print_trainable_parameters()
         model.to(device)
-        conversations = self.datamanager._load_conversations(cfg)
+        conversations = self.dataloader._load_conversations(cfg)
         if not conversations:
             raise ValueError(f"No conversations found under data.path='{cfg.data.path}' (data.type='{cfg.data.type}').")
         self.log.info("Loaded %d conversation(s).", len(conversations))
@@ -260,11 +257,10 @@ class Modes:
         eval_conversations = conversations[:num_eval]
         train_conversations = conversations[num_eval:]
         self.log.info("Train: %d  Eval: %d", len(train_conversations), len(eval_conversations))
-        train_dataset = self.datamanager._build_dataset(train_conversations, tokenizer, cfg.training.max_length)
-        eval_dataset = self.datamanager._build_dataset(eval_conversations, tokenizer, cfg.training.max_length) if eval_conversations else None
-        collator = self.datamanager._make_collator(tokenizer.pad_token_id)
+        train_dataset = self.dataloader._build_dataset(train_conversations, tokenizer, cfg.training.max_length)
+        eval_dataset = self.dataloader._build_dataset(eval_conversations, tokenizer, cfg.training.max_length) if eval_conversations else None
+        collator = self.dataloader._make_collator(tokenizer.pad_token_id)
         optimizer = self._build_optimizer(cfg, model)
-
         training_args = TrainingArguments(
             output_dir=cfg.training.output_dir,
             num_train_epochs=cfg.training.epochs,

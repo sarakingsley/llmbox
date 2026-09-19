@@ -1,0 +1,7 @@
+- model=phi4_instruct
+- mode=finetune
+- model.source=local
+- model.local_path=/Users/skingsle/Documents/llmbox/models/llms/microsoft/phi-4-mini-instruct
+- training.enabled=true
+- data=jsonl
+- data.path=/Users/skingsle/Documents/llmbox/llm_box/data/sentiment/train.jsonl

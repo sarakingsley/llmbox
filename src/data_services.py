@@ -40,8 +40,6 @@ from torch.utils.data import Dataset
 
 from omegaconf import OmegaConf
 
-#log = logging.getLogger(__name__)
-
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -52,21 +50,15 @@ IGNORE_INDEX = -100
 class DataTransformer:
     """
     Prepare row-oriented datasets for causal language-model training.
-
     Every standardized example contains:
-
         prompt:
             The input context. Empty for text-only language modeling.
-
         completion:
             The desired continuation or response.
-
         text:
             prompt + completion, suitable for full-sequence causal-LM training.
-
         messages:
             A chat representation suitable for chat-template-based fine-tuning.
-
     This class does not tokenize data or create loss masks. Those operations
     belong in the training pipeline.
     """
@@ -75,10 +67,8 @@ class DataTransformer:
     def _json_text(value: Any) -> str:
         """
         Serialize a Python value as strict JSON.
-
         ensure_ascii=False preserves characters such as accented letters.
         allow_nan=False rejects NaN and Infinity, which are not valid JSON.
-
         Unsupported values, such as sets or tensors, must be converted by
         the caller before using this utility.
         """
@@ -92,10 +82,8 @@ class DataTransformer:
     def _render_value(value: Any) -> str:
         """
         Convert a dataset value into model-visible text.
-
         Strings are returned unchanged. In particular, a string that already
         contains JSON must not be JSON-encoded a second time.
-
         Other values use JSON formatting:
             True -> "true"
             42 -> "42"
@@ -103,8 +91,7 @@ class DataTransformer:
         """
         if isinstance(value, str):
             return value
-
-        return DataUtility._json_text(value)
+        return DataTransformer._json_text(value)
 
     @staticmethod
     def _normalize_columns(
@@ -113,7 +100,6 @@ class DataTransformer:
     ) -> list[str]:
         """
         Normalize one column name or a sequence of names into a list.
-
         Reject empty names and duplicates instead of silently producing
         incomplete or ambiguous examples.
         """
@@ -128,39 +114,31 @@ class DataTransformer:
                 f"{argument_name} must be a column name "
                 "or a sequence of column names."
             )
-
         if not names:
             raise ValueError(f"{argument_name} must not be empty.")
-
         for name in names:
             if not isinstance(name, str) or not name.strip():
                 raise ValueError(
                     f"{argument_name} must contain non-empty strings."
                 )
-
         if len(names) != len(set(names)):
             raise ValueError(
                 f"{argument_name} contains duplicate column names."
             )
-
         return names
 
     @staticmethod
     def _read_value(row: Mapping[str, Any], column: str) -> Any:
         """
         Read a required, non-null field.
-
         An absent field and a field containing None are both rejected.
         Empty strings are checked separately where the field is used.
         """
         if column not in row:
             raise ValueError(f"missing column {column!r}")
-
         value = row[column]
-
         if value is None:
             raise ValueError(f"column {column!r} is null")
-
         return value
 
     @staticmethod
@@ -169,25 +147,19 @@ class DataTransformer:
     ) -> tuple[str, str]:
         """
         Validate an already string-valued prompt/completion pair.
-
         An empty prompt is valid for text-only language modeling.
         A completion must contain at least one non-whitespace character.
-
         Return the original strings without stripping meaningful whitespace.
         """
         for field in ("prompt", "completion"):
             if field not in example:
                 raise ValueError(f"missing field {field!r}")
-
             if not isinstance(example[field], str):
                 raise TypeError(f"{field!r} must be a string")
-
         prompt = example["prompt"]
         completion = example["completion"]
-
         if not completion.strip():
             raise ValueError("'completion' must not be empty")
-
         return prompt, completion
 
     @staticmethod
@@ -196,55 +168,41 @@ class DataTransformer:
     ) -> dict[str, Any]:
         """
         Add training representations to a prompt/completion example.
-
         Both fields are required. Unlike a schema-detection function, this
         function rejects unrelated records rather than silently passing
         them through.
-
         A completion may be:
             - a string, preserved exactly;
             - a dictionary or list, serialized once as JSON.
-
         Other fields are preserved. Existing text/messages fields are
         regenerated so they agree with prompt/completion.
-
         No separator is inserted between prompt and completion. The prompt
         is responsible for its own formatting, such as a final "Output:\\n".
         """
         if not isinstance(example, Mapping):
             raise TypeError("Each example must be a mapping.")
-
         result = dict(example)
-
         if "completion" in result:
             completion = result["completion"]
-
             if isinstance(completion, (dict, list)):
-                result["completion"] = DataUtility._json_text(completion)
-
-        prompt, completion = DataUtility._validate_prompt_completion(
+                result["completion"] = DataTransformer._json_text(completion)
+        prompt, completion = DataTransformer._validate_prompt_completion(
             result
         )
-
         result["text"] = prompt + completion
-
         # Do not fabricate an empty user turn for text-only documents.
         # Such records are intended primarily for the train/text path.
         messages: list[dict[str, str]] = []
-
         if prompt:
             messages.append({
                 "role": "user",
                 "content": prompt,
             })
-
         messages.append({
             "role": "assistant",
             "content": completion,
         })
-
         result["messages"] = messages
-
         return result
 
     def standardize_llm_dataset(
@@ -306,26 +264,21 @@ class DataTransformer:
                 "dataset must contain rows, not a path or string. "
                 "Load the file before calling this method."
             )
-
         if not isinstance(instruction, str):
             raise TypeError("instruction must be a string.")
-
         # Omitting text_columns explicitly selects the existing-pair path.
         use_existing_pairs = text_columns is None
-
         if use_existing_pairs:
             if target_columns is not None:
                 raise ValueError(
                     "target_columns requires text_columns."
                 )
-
             if instruction.strip():
                 raise ValueError(
                     "instruction is not supported in existing-pair mode. "
                     "Edit the existing prompts or select text_columns "
                     "and target_columns explicitly."
                 )
-
             inputs: list[str] = []
             targets: list[str] = []
         else:
@@ -333,7 +286,6 @@ class DataTransformer:
                 text_columns,
                 "text_columns",
             )
-
             targets = (
                 self._normalize_columns(
                     target_columns,
@@ -342,21 +294,17 @@ class DataTransformer:
                 if target_columns is not None
                 else []
             )
-
             overlapping_columns = set(inputs) & set(targets)
-
             if overlapping_columns:
                 raise ValueError(
                     "Input and target columns overlap: "
                     f"{sorted(overlapping_columns)}"
                 )
-
             if instruction.strip() and not targets:
                 raise ValueError(
                     "instruction requires target_columns. "
                     "Text-only language modeling uses an empty prompt."
                 )
-
         # Validate mapping configuration once, rather than once per row.
         if label_maps is None:
             maps: Mapping[str, Mapping[Any, Any]] = {}
@@ -364,28 +312,23 @@ class DataTransformer:
             maps = label_maps
         else:
             raise TypeError("label_maps must be a mapping.")
-
         for column, replacements in maps.items():
             if column not in targets:
                 raise ValueError(
                     f"label_maps refers to non-target column {column!r}."
                 )
-
             if not isinstance(replacements, Mapping):
                 raise TypeError(
                     f"label_maps[{column!r}] must be a mapping."
                 )
-
         try:
             rows = iter(dataset)
         except TypeError as exc:
             raise TypeError("dataset must be iterable.") from exc
-
         for row_index, row in enumerate(rows):
             try:
                 if not isinstance(row, Mapping):
                     raise TypeError("each row must be a mapping")
-
                 if use_existing_pairs:
                     # Preserve prompt formatting and JSON completion strings.
                     # Ignore unrelated source columns.
@@ -393,22 +336,17 @@ class DataTransformer:
                         "prompt": self._read_value(row, "prompt"),
                         "completion": self._read_value(row, "completion"),
                     }
-
                 else:
                     # Render inputs in the order requested by the caller.
                     input_values: dict[str, str] = {}
-
                     for column in inputs:
                         value = self._read_value(row, column)
                         rendered_value = self._render_value(value)
-
                         if not rendered_value.strip():
                             raise ValueError(
                                 f"input column {column!r} is empty"
                             )
-
                         input_values[column] = rendered_value
-
                     if not targets:
                         # Text-only LM: learn to predict the whole document.
                         if len(inputs) == 1:
@@ -418,20 +356,16 @@ class DataTransformer:
                                 f"{column}:\n{value}"
                                 for column, value in input_values.items()
                             )
-
                         pair = {
                             "prompt": "",
                             "completion": completion,
                         }
-
                     else:
                         # Supervised generation: preserve target types until
                         # deciding whether to serialize one value or an object.
                         output_values: dict[str, Any] = {}
-
                         for column in targets:
                             value = self._read_value(row, column)
-
                             if column in maps:
                                 try:
                                     value = maps[column][value]
@@ -440,56 +374,45 @@ class DataTransformer:
                                         f"no label mapping for {column!r} "
                                         f"value {value!r}"
                                     ) from exc
-
                             if value is None:
                                 raise ValueError(
                                     f"target column {column!r} resolves to null"
                                 )
-
                             if isinstance(value, str) and not value.strip():
                                 raise ValueError(
                                     f"target column {column!r} is empty"
                                 )
-
                             output_values[column] = value
-
                         if len(targets) == 1:
                             completion = self._render_value(
                                 output_values[targets[0]]
                             )
                         else:
                             completion = self._json_text(output_values)
-
                         input_block = "\n\n".join(
                             f"{column}:\n{value}"
                             for column, value in input_values.items()
                         )
-
                         instruction_prefix = ""
                         if instruction.strip():
                             instruction_prefix = instruction.strip() + "\n\n"
-
                         prompt = (
                             instruction_prefix
                             + f"Input:\n{input_block}\n\nOutput:\n"
                         )
-
                         pair = {
                             "prompt": prompt,
                             "completion": completion,
                         }
-
                 # Normalize AFTER formatting. Otherwise the derived fields
                 # would be lost when constructing the final example.
                 standardized_example = self.normalize_prompt_completion(
                     pair
                 )
-
             except (TypeError, ValueError, OverflowError) as exc:
                 raise ValueError(
                     f"Row {row_index}: {exc}"
                 ) from exc
-
             yield standardized_example
 
     @staticmethod
@@ -519,9 +442,9 @@ class DataTransformer:
                     raise TypeError("each example must be a mapping")
 
                 if require_prompt_completion:
-                    DataUtility._validate_prompt_completion(example)
+                    DataTransformer._validate_prompt_completion(example)
 
-                serialized_example = DataUtility._json_text(dict(example))
+                serialized_example = DataTransformer._json_text(dict(example))
                 lines.append(serialized_example + "\n")
 
             except (TypeError, ValueError, OverflowError) as exc:
@@ -557,7 +480,7 @@ class DataTransformer:
                 "Set overwrite=True to replace it."
             )
 
-        lines = DataUtility._serialize_examples(examples)
+        lines = DataTransformer._serialize_examples(examples)
 
         destination_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -628,7 +551,7 @@ class DataTransformer:
                         "Set overwrite=True to replace it."
                     )
 
-        lines = DataUtility._serialize_examples(
+        lines = DataTransformer._serialize_examples(
             examples,
             require_prompt_completion=True,
         )
@@ -803,21 +726,17 @@ class CausalLMCollator:
 class TrainingDataLoader:
     """
     Load chat records and prepare assistant-only causal-LM training data.
-
     assistant_mask_strategy:
         "template":
             Use assistant token masks returned by the tokenizer's chat
             template. The template must mark assistant output with
             {% generation %} ... {% endgeneration %} blocks.
-
         "verified_prefix":
             Locate assistant responses using tokenized conversation
             prefixes. Every prefix must exactly match the corresponding
             beginning of the full token sequence.
-
             This works only for compatible chat templates. Incompatible
             templates raise an error instead of receiving guessed masks.
-
     This class expects text-only system/user/assistant messages.
     Tool calls and multimodal messages require additional handling.
     """
@@ -834,7 +753,6 @@ class TrainingDataLoader:
                 "assistant_mask_strategy must be "
                 "'template' or 'verified_prefix'."
             )
-
         self.log = logging.getLogger(__name__)
         self.IGNORE_INDEX = IGNORE_INDEX
         self.assistant_mask_strategy = assistant_mask_strategy
@@ -845,63 +763,50 @@ class TrainingDataLoader:
     ) -> list[dict[str, str]]:
         """
         Validate and copy a text-only conversation.
-
         Require at least one non-empty assistant response because this
         loader constructs assistant-only training targets.
-
         Role alternation is not enforced here: individual chat templates
         may impose additional conversation rules during tokenization.
         """
         if not isinstance(messages, list) or not messages:
             raise ValueError("'messages' must be a non-empty list.")
-
         allowed_roles = {"system", "user", "assistant"}
         validated_messages: list[dict[str, str]] = []
         has_assistant_response = False
-
         for message_index, message in enumerate(messages):
             if not isinstance(message, Mapping):
                 raise TypeError(
                     f"Message {message_index} must be a mapping."
                 )
-
             role = message.get("role")
             content = message.get("content")
-
             if not isinstance(role, str) or role not in allowed_roles:
                 raise ValueError(
                     f"Message {message_index} has unsupported role {role!r}."
                 )
-
             if not isinstance(content, str):
                 raise TypeError(
                     f"Message {message_index}: content must be a string."
                 )
-
             if not content.strip():
                 raise ValueError(
                     f"Message {message_index}: content must not be empty."
                 )
-
             # Do not silently discard structured tool-call information.
             if "tool_calls" in message or "function_call" in message:
                 raise ValueError(
                     "Tool/function-call messages are not supported."
                 )
-
             validated_messages.append({
                 "role": role,
                 "content": content,
             })
-
             if role == "assistant":
                 has_assistant_response = True
-
         if not has_assistant_response:
             raise ValueError(
                 "Conversation must contain an assistant response."
             )
-
         return validated_messages
 
     def _record_to_conversation(
@@ -912,30 +817,26 @@ class TrainingDataLoader:
         Convert a JSONL record into the common conversation format.
 
         Prefer messages when explicitly present. Otherwise, normalize
-        prompt/completion using DataUtility from this same module.
+        prompt/completion using DataTransformer from this same module.
 
         An invalid messages field is not silently replaced by other fields.
         Text-only records are not implicitly treated as instruction data.
         """
         if not isinstance(record, Mapping):
             raise TypeError("Each JSONL record must be a JSON object.")
-
         if "messages" in record:
             messages = record["messages"]
-
         elif "prompt" in record and "completion" in record:
             normalized_record = (
-                DataUtility.normalize_prompt_completion(record)
+                DataTransformer.normalize_prompt_completion(record)
             )
             messages = normalized_record["messages"]
-
         else:
             raise ValueError(
                 "Expected 'messages' or both 'prompt' and 'completion'. "
                 "Text-only data should use the program's language-model "
                 "training path."
             )
-
         return {
             "messages": self._validate_messages(messages),
         }
@@ -946,7 +847,6 @@ class TrainingDataLoader:
     ) -> list[dict[str, list[dict[str, str]]]]:
         """
         Dispatch using the program's attribute-based configuration.
-
         Expected fields:
             cfg.data.type: "chat_log" or "jsonl"
             cfg.data.path: file or directory path
@@ -954,16 +854,13 @@ class TrainingDataLoader:
         """
         data_config = cfg.data
         dataset_path = Path(data_config.path).expanduser()
-
         if data_config.type == "chat_log":
             return self._load_conversations_from_chat_log(
                 dataset_path,
                 min_turns=getattr(data_config, "min_turns", 1),
             )
-
         if data_config.type == "jsonl":
             return self._load_conversations_from_jsonl(dataset_path)
-
         raise ValueError(
             f"Unknown data.type {data_config.type!r}. "
             "Use 'chat_log' or 'jsonl'."
@@ -976,7 +873,6 @@ class TrainingDataLoader:
     ) -> list[dict[str, list[dict[str, str]]]]:
         """
         Load one conversation per JSON chat-log file.
-
         Expected log structure:
             {
                 "session": {
@@ -989,10 +885,8 @@ class TrainingDataLoader:
                     }
                 ]
             }
-
         Incomplete turns are skipped. min_turns counts complete retained
         user/assistant pairs, not the number of raw turn records.
-
         Missing paths raise errors. Malformed individual files are logged
         and skipped.
         """
@@ -1002,58 +896,43 @@ class TrainingDataLoader:
             or min_turns < 1
         ):
             raise ValueError("min_turns must be a positive integer.")
-
         chat_log_dir = Path(chat_log_dir).expanduser()
-
         if not chat_log_dir.exists():
             raise FileNotFoundError(chat_log_dir)
-
         if not chat_log_dir.is_dir():
             raise NotADirectoryError(chat_log_dir)
-
         conversations: list[dict[str, list[dict[str, str]]]] = []
-
         # Sorting makes file traversal reproducible.
         for log_file in sorted(chat_log_dir.glob("*.json")):
             try:
                 record = json.loads(
                     log_file.read_text(encoding="utf-8")
                 )
-
                 if not isinstance(record, Mapping):
                     raise ValueError("Chat log must contain a JSON object.")
-
                 turns = record.get("turns", [])
                 if not isinstance(turns, list):
                     raise ValueError("'turns' must be a list.")
-
                 session = record.get("session") or {}
                 if not isinstance(session, Mapping):
                     raise ValueError("'session' must be an object.")
-
                 settings = session.get("settings") or {}
                 if not isinstance(settings, Mapping):
                     raise ValueError("'session.settings' must be an object.")
-
                 system_prompt = (
                     settings.get("system_prompt")
                     or session.get("system_prompt")
                 )
-
                 messages: list[dict[str, str]] = []
-
                 if system_prompt is not None:
                     if not isinstance(system_prompt, str):
                         raise TypeError("system_prompt must be a string.")
-
                     if system_prompt.strip():
                         messages.append({
                             "role": "system",
                             "content": system_prompt,
                         })
-
                 complete_turn_count = 0
-
                 for turn_index, turn in enumerate(turns):
                     if not isinstance(turn, Mapping):
                         self.log.warning(
@@ -1062,10 +941,8 @@ class TrainingDataLoader:
                             turn_index,
                         )
                         continue
-
                     user_message = turn.get("user")
                     assistant_message = turn.get("assistant")
-
                     if (
                         not isinstance(user_message, Mapping)
                         or not isinstance(assistant_message, Mapping)
@@ -1076,10 +953,8 @@ class TrainingDataLoader:
                             turn_index,
                         )
                         continue
-
                     user_content = user_message.get("content")
                     assistant_content = assistant_message.get("content")
-
                     if (
                         not isinstance(user_content, str)
                         or not user_content.strip()
@@ -1092,7 +967,6 @@ class TrainingDataLoader:
                             turn_index,
                         )
                         continue
-
                     messages.extend([
                         {"role": "user", "content": user_content},
                         {
@@ -1101,7 +975,6 @@ class TrainingDataLoader:
                         },
                     ])
                     complete_turn_count += 1
-
                 if complete_turn_count < min_turns:
                     self.log.debug(
                         "Skipping %s: %d complete turns; need %d.",
@@ -1110,18 +983,15 @@ class TrainingDataLoader:
                         min_turns,
                     )
                     continue
-
                 conversations.append({
                     "messages": self._validate_messages(messages),
                 })
-
             except (OSError, UnicodeError, TypeError, ValueError) as exc:
                 self.log.warning(
                     "Skipping chat log %s: %s",
                     log_file,
                     exc,
                 )
-
         self.log.info(
             "Loaded %d conversations from %s.",
             len(conversations),
@@ -1135,20 +1005,16 @@ class TrainingDataLoader:
     ) -> list[dict[str, list[dict[str, str]]]]:
         """
         Read messages or prompt/completion records from a JSONL file.
-
         Blank lines are ignored. Malformed records are logged and skipped.
         Errors opening or reading the file propagate to the caller.
-
         Report physical, one-based line numbers for easy file inspection.
         """
         dataset_path = Path(dataset_path).expanduser()
         conversations: list[dict[str, list[dict[str, str]]]] = []
-
         with dataset_path.open("r", encoding="utf-8") as source:
             for line_number, line in enumerate(source, start=1):
                 if not line.strip():
                     continue
-
                 try:
                     record = json.loads(line)
                     conversation = self._record_to_conversation(record)
@@ -1160,9 +1026,7 @@ class TrainingDataLoader:
                         exc,
                     )
                     continue
-
                 conversations.append(conversation)
-
         self.log.info(
             "Loaded %d conversations from %s.",
             len(conversations),
@@ -1174,7 +1038,6 @@ class TrainingDataLoader:
     def _validate_token_ids(token_ids: Any) -> list[int]:
         """
         Require a flat, unbatched list of token IDs.
-
         These methods deliberately do not request tensors. Padding and
         conversion to tensors happen later in the collator.
         """
@@ -1182,7 +1045,6 @@ class TrainingDataLoader:
             raise TypeError(
                 "Chat template must return a flat list of token IDs."
             )
-
         if any(
             isinstance(token_id, bool)
             or not isinstance(token_id, int)
@@ -1192,7 +1054,6 @@ class TrainingDataLoader:
             raise ValueError(
                 "Token IDs must be non-negative integers."
             )
-
         return token_ids
 
     def _tokenize_with_template_mask(
@@ -1202,10 +1063,8 @@ class TrainingDataLoader:
     ) -> tuple[list[int], list[int]]:
         """
         Use assistant regions explicitly marked by the chat template.
-
         This is preferable to inferring token boundaries from string
         lengths or separately tokenized message content.
-
         Requires a tokenizer/template supporting:
             return_dict=True
             return_assistant_tokens_mask=True
@@ -1219,32 +1078,26 @@ class TrainingDataLoader:
             truncation=False,
             padding=False,
         )
-
         if not isinstance(encoded, Mapping):
             raise TypeError(
                 "Tokenizer did not return the requested dictionary."
             )
-
         token_ids = self._validate_token_ids(encoded.get("input_ids"))
         assistant_mask = encoded.get("assistant_masks")
-
         if not isinstance(assistant_mask, list):
             raise ValueError(
                 "Tokenizer did not return 'assistant_masks'. "
                 "Use a supported tokenizer and chat template."
             )
-
         if len(assistant_mask) != len(token_ids):
             raise ValueError(
                 "Assistant mask length differs from token sequence length."
             )
-
         if any(
             not isinstance(value, (int, bool)) or value not in (0, 1)
             for value in assistant_mask
         ):
             raise ValueError("Assistant mask must contain only 0 and 1.")
-
         if not any(assistant_mask):
             raise ValueError(
                 "The template returned no assistant tokens. "
@@ -1252,7 +1105,6 @@ class TrainingDataLoader:
                 "or explicitly select assistant_mask_strategy="
                 "'verified_prefix' for a compatible template."
             )
-
         labels = [
             token_id if is_assistant else self.IGNORE_INDEX
             for token_id, is_assistant in zip(
@@ -1260,7 +1112,6 @@ class TrainingDataLoader:
                 assistant_mask,
             )
         ]
-
         return token_ids, labels
 
     def _tokenize_with_verified_prefixes(
@@ -1270,14 +1121,11 @@ class TrainingDataLoader:
     ) -> tuple[list[int], list[int]]:
         """
         Infer assistant spans only when token prefixes are exact matches.
-
         For each assistant turn:
             start = length of prior context + assistant generation header
             end   = length of conversation through that assistant turn
-
         The assistant header is excluded from loss. Template suffixes
         following the answer, such as end-of-turn tokens, are included.
-
         This strategy is intentionally conservative. Templates that change
         earlier text depending on later messages are rejected.
         """
@@ -1301,13 +1149,10 @@ class TrainingDataLoader:
             add_generation_prompt=False,
         )
         labels = [self.IGNORE_INDEX] * len(full_ids)
-
         for message_index, message in enumerate(messages):
             if message["role"] != "assistant":
                 continue
-
             previous_messages = messages[:message_index]
-
             # Rendering an empty conversation is unsupported by many
             # templates. Do not invent an empty user message to work around it.
             if not previous_messages:
@@ -1316,7 +1161,6 @@ class TrainingDataLoader:
                     "message. Use a suitable template mask or the text-only "
                     "training path for assistant-only documents."
                 )
-
             context_ids = tokenize_prefix(
                 previous_messages,
                 add_generation_prompt=False,
@@ -1329,7 +1173,6 @@ class TrainingDataLoader:
                 messages[:message_index + 1],
                 add_generation_prompt=False,
             )
-
             # Some templates ignore add_generation_prompt entirely.
             # In that case we cannot establish the assistant-header boundary.
             if generation_prefix_ids == context_ids:
@@ -1337,10 +1180,8 @@ class TrainingDataLoader:
                     "Chat template did not add an assistant generation "
                     "header. Use template-provided assistant masks instead."
                 )
-
             start = len(generation_prefix_ids)
             end = len(completed_prefix_ids)
-
             if (
                 not 0 <= start < end <= len(full_ids)
                 or full_ids[:start] != generation_prefix_ids
@@ -1351,9 +1192,7 @@ class TrainingDataLoader:
                     "match the full conversation. Assistant boundaries "
                     "cannot be inferred safely for this template."
                 )
-
             labels[start:end] = full_ids[start:end]
-
         return full_ids, labels
 
     def _build_labeled_example(
@@ -1410,16 +1249,13 @@ class TrainingDataLoader:
     ) -> TokenizedChatDataset:
         """
         Eagerly tokenize conversations and return an unpadded Dataset.
-
         Conversations without surviving trainable tokens are skipped.
         Tokenization/template errors are fatal: silently skipping them
         could hide a systematic masking bug.
-
         Memory use is proportional to the complete tokenized dataset.
         """
         examples: list[dict[str, list[int]]] = []
         skipped_count = 0
-
         for conversation_index, conversation in enumerate(conversations):
             if (
                 not isinstance(conversation, Mapping)
@@ -1429,7 +1265,6 @@ class TrainingDataLoader:
                     f"Conversation {conversation_index} must contain "
                     "'messages'."
                 )
-
             try:
                 input_ids, labels = self._build_labeled_example(
                     tokenizer,
@@ -1447,34 +1282,28 @@ class TrainingDataLoader:
                 label != self.IGNORE_INDEX
                 for label in labels
             )
-
             if not has_trainable_tokens:
                 skipped_count += 1
                 continue
-
             examples.append({
                 "input_ids": input_ids,
                 "labels": labels,
             })
-
         if skipped_count:
             self.log.info(
                 "Skipped %d conversations with no trainable tokens "
                 "after truncation and next-token alignment.",
                 skipped_count,
             )
-
         if not examples:
             raise ValueError(
                 "No usable training examples remain. Check the source data, "
                 "chat template, assistant masks, and max_length."
             )
-
         self.log.info(
             "Prepared %d tokenized training examples.",
             len(examples),
         )
-
         return TokenizedChatDataset(examples)
 
     def _make_collator(

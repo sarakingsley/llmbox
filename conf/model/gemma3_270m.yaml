@@ -10,4 +10,5 @@ device: auto
 trust_remote_code: false
 supports_tool_calling: false
 supports_structured_output: true
+tool_calling_format: generic
 chat_template_kwargs: {}

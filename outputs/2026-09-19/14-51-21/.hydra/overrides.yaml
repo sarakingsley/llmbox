@@ -1,0 +1,5 @@
+- model=phi4_instruct
+- mode=generate
+- model.source=local
+- model.local_path=/Users/skingsle/Documents/llmbox/models/llms/microsoft/phi-4-mini-instruct
+- prompt=what is the best coffee in the world?

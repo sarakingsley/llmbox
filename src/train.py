@@ -1,8 +1,36 @@
+import os
+import sys
+import json
 import logging
 from torch.utils.data import DataLoader
-from data_services import TrainingDataLoader
+import hydra
+from omegaconf import OmegaConf
 
+from src.data_services import TrainingDataLoader
+from src.schema import Config, register_configs
+from src.modes import Modes
 
+modes = Modes()
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(asctime)s][%(levelname)s] %(message)s',
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+
+log = logging.getLogger(__name__)
+
+register_configs()
+
+_DISPATCH = {
+    "chat": modes.run_chat,
+    "generate": modes.run_generate,
+    "tool_calling": modes.run_tool_calling,
+    "structured_output": modes.run_structured_output,
+    "train": modes.run_train,
+    "finetune": modes.run_finetune,
+}
 
 training_data = TrainingDataLoader(
     assistant_mask_strategy="template",
@@ -49,3 +77,17 @@ print("Trainable targets:", (batch["labels"] != -100).sum().item())
 training_data = TrainingDataLoader(
     assistant_mask_strategy="verified_prefix",
 )
+
+
+@hydra.main(version_base=None, config_path="conf", config_name="config")
+def llmbox(cfg: Config) -> None:
+    detect_and_warn_llm_api_usage(cfg)
+    log.info("Resolved configuration:\n%s", OmegaConf.to_yaml(cfg))
+    mode_name = cfg.mode.name
+    if mode_name not in _DISPATCH:
+        raise ValueError(f"Unknown mode '{mode_name}'. Choose one of: {sorted(_DISPATCH)}")
+    _DISPATCH[mode_name](cfg)
+
+
+if __name__ == "__main__":
+    llmbox()

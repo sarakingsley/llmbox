@@ -1,0 +1,55 @@
+{
+  "session": {
+    "session_id": "3dc9b0bc",
+    "started_at": "2026-09-19T18:45:52.819426+00:00",
+    "model": {
+      "name": "phi4_instruct",
+      "source": "local",
+      "model_id": "microsoft/Phi-4-mini-instruct",
+      "local_path": "/Users/skingsle/Documents/llmbox/models/llms/microsoft/phi-4-mini-instruct",
+      "architecture": "phi3",
+      "dtype": "bfloat16",
+      "device": "auto",
+      "trust_remote_code": false,
+      "supports_tool_calling": true,
+      "supports_structured_output": true,
+      "tool_calling_format": "functools_prompt",
+      "chat_template_kwargs": {}
+    },
+    "generation": {
+      "max_new_tokens": 512,
+      "temperature": 1.0,
+      "top_p": 0.95,
+      "top_k": 64,
+      "do_sample": true,
+      "repetition_penalty": 1.0
+    },
+    "system_prompt": "You are a helpful assistant."
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "user": {
+        "username": "user",
+        "content": "hello!",
+        "timestamp": "2026-09-19T18:45:56.395801+00:00"
+      },
+      "assistant": {
+        "content": "Hello! How can I assist you today?",
+        "timestamp": "2026-09-19T18:45:56.395810+00:00"
+      }
+    },
+    {
+      "turn": 2,
+      "user": {
+        "username": "user",
+        "content": "just wanted to say howdy",
+        "timestamp": "2026-09-19T18:46:07.405034+00:00"
+      },
+      "assistant": {
+        "content": "Hey there! Just wanted to acknowledge your greeting. If there's anything specific on your mind, feel free to share, and I'll be here to help! Have a great day!",
+        "timestamp": "2026-09-19T18:46:07.405041+00:00"
+      }
+    }
+  ]
+}

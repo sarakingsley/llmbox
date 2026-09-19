@@ -1,0 +1,5 @@
+- model=gemma3_270m
+- mode=generate
+- model.source=local
+- model.local_path=/Users/skingsle/Documents/llmbox/models/llms/google/gemma-3-270m-it
+- prompt=what is the best coffee in the world?

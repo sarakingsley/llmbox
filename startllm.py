@@ -90,6 +90,8 @@ from pathlib import Path
 import hydra
 from omegaconf import OmegaConf
 
+# import LLMBOX application software:
+import src
 from src.modes import Modes
 from src.schema import Config, register_configs
 
@@ -192,16 +194,14 @@ def send_llm_api_notice(cfg, warn_msg):
 
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
-def main(cfg: Config) -> None:
+def llmbox(cfg: Config) -> None:
     detect_and_warn_llm_api_usage(cfg)
     log.info("Resolved configuration:\n%s", OmegaConf.to_yaml(cfg))
-
     mode_name = cfg.mode.name
     if mode_name not in _DISPATCH:
         raise ValueError(f"Unknown mode '{mode_name}'. Choose one of: {sorted(_DISPATCH)}")
-
     _DISPATCH[mode_name](cfg)
 
 
 if __name__ == "__main__":
-    main()
+    llmbox()

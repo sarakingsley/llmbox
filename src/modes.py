@@ -202,7 +202,6 @@ class Modes:
     # --------------------------------------------------------------------------
     def _build_optimizer(self, cfg, model):
         import torch
-
         opt = cfg.optimizer
         params = [p for p in model.parameters() if p.requires_grad]
         if opt.name == "adamw":

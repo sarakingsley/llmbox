@@ -71,7 +71,6 @@ class GenerationManager:
             return cfg.model.model_id, False
         raise ValueError(f"Unknown model.source '{cfg.model.source}'. Use 'huggingface' or 'local'.")
 
-
     def _ensure_remote_code_compat(self):
         """Some trust_remote_code model repos (e.g. Phi-4-mini-instruct's
         modeling_phi3.py) still import `LossKwargs` from `transformers.utils`,

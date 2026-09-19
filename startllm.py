@@ -89,6 +89,10 @@ from src.schema import Config, register_configs
 
 modes = Modes()
 
+
+# Configure logging in the application, not inside the reusable module.
+#logging.basicConfig(level=logging.INFO)
+
 log = logging.getLogger(__name__)
 
 register_configs()

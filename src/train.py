@@ -3,10 +3,6 @@ from torch.utils.data import DataLoader
 from data_services import TrainingDataLoader
 
 
-#from peft import LoraConfig
-
-#peft_config = LoraConfig(target_modules=["q_proj"], task_type=TaskType.CAUSAL_LM, inference_mode=False, r=8, lora_alpha=32, lora_dropout=0.1)
-
 
 training_data = TrainingDataLoader(
     assistant_mask_strategy="template",

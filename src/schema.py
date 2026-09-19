@@ -121,9 +121,11 @@ class OptimizerConfig:
 @dataclass
 class TrainingConfig:
     """Shared by both the 'train' (continued pretraining, full weights only)
-    and 'finetune' (LoRA or full) modes."""
+    and 'finetune' (parameter-efficient or full) modes.
+    New in 2024: method supports additional techniques beyond LoRA.
+    """
     enabled: bool = False
-    method: str = "full"               # full | lora  (train mode only allows 'full')
+    method: str = "full"               # full | lora | adapters | bitfit | freeze | prefix | qlora
     epochs: float = 3.0
     batch_size: int = 2
     grad_accum_steps: int = 8
@@ -132,11 +134,15 @@ class TrainingConfig:
     lora_r: int = 8
     lora_alpha: int = 16
     lora_dropout: float = 0.05
+    prefix_length: int = 30            # For prefix-tuning
+    adapters_dim: int = 64             # For adapters
+    bitfit_bias_params: Optional[List[str]] = field(default_factory=lambda: [])  # For BitFit, e.g. ['bias']
+    freeze_modules: Optional[List[str]] = field(default_factory=lambda: [])  # For freeze, e.g. ['embed', 'ln_f']
     logging_steps: int = 10
     save_steps: int = 100
     eval_steps: int = 100
     output_dir: str = "./finetuned"
-    merge_adapter: bool = False        # after LoRA training, also save an adapter-free merged copy
+    merge_adapter: bool = False        # After PEFT training, also save an adapter-free merged copy
 
 @dataclass
 class DataConfig:

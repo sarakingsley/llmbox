@@ -86,7 +86,6 @@ class GenerationConfig:
     do_sample: bool = True
     repetition_penalty: float = 1.0
 
-
 @dataclass
 class ToolDef:
     """One callable tool, described the way chat templates that support
@@ -95,20 +94,17 @@ class ToolDef:
     description: str = ""
     parameters: Dict[str, Any] = field(default_factory=dict)
 
-
 @dataclass
 class ToolCallingConfig:
     enabled: bool = False
     tool_choice: str = "auto"          # auto | required | none
     tools: List[ToolDef] = field(default_factory=list)
 
-
 @dataclass
 class StructuredOutputConfig:
     enabled: bool = False
     schema_path: Optional[str] = None  # path to a JSON Schema file describing the desired output
     strict: bool = True                # if true, fail loudly (well, warn) when output isn't valid JSON
-
 
 @dataclass
 class OptimizerConfig:
@@ -119,7 +115,6 @@ class OptimizerConfig:
     betas: List[float] = field(default_factory=lambda: [0.9, 0.999])
     eps: float = 1e-8
     momentum: float = 0.0              # only used by sgd
-
 
 @dataclass
 class TrainingConfig:

@@ -1,0 +1,3 @@
+[2026-09-19T16:43:06.390931] [WARNING] WARNING: You are running with a remote model/API (model source: huggingface, model_id: google/gemma-3-270m-it).
+You must use models that are hosted locally and not interact with external LLM APIs for coursework.
+A notification will be sent to course staff. If this is unintended, please check your configuration.

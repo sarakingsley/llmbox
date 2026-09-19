@@ -38,6 +38,20 @@ from omegaconf import OmegaConf
 
 # import LLMBOX application software:
 from src.sys_logger import Logger
+from src.schema import (
+    ModelConfig,
+    GenerationConfig,
+    ToolDef,
+    ToolCallingConfig,
+    StructuredOutputConfig,
+    OptimizerConfig,
+    TrainingConfig,
+    DataConfig,
+    ModeConfig,
+    Config,
+    register_configs
+)
+
 from src.generation import GenerationManager
 from src.data_services import (
     DataTransformer,
@@ -45,8 +59,6 @@ from src.data_services import (
     TokenizedChatDataset,
     TrainingDataLoader
 )
-
-
 
 class Modes:
 

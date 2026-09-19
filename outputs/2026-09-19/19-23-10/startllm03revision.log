@@ -1,0 +1,92 @@
+[2026-09-19 19:23:10,446][__main__][INFO] - Resolved configuration:
+model:
+  name: gemma3_270m_it
+  source: huggingface
+  model_id: google/gemma-3-270m-it
+  local_path: null
+  architecture: gemma3_text
+  dtype: bfloat16
+  device: auto
+  trust_remote_code: false
+  supports_tool_calling: false
+  supports_structured_output: true
+  tool_calling_format: generic
+  chat_template_kwargs: {}
+  assistant_mask_strategy: verified_prefix
+  add_prefix: null
+  add_suffix: null
+  add_specialtokens: []
+mode:
+  name: prepare_data
+data:
+  type: jsonl
+  path: /Users/skingsle/Documents/llmbox/llm_box/data/transformed_datasets/lsatexample.jsonl
+  min_turns: 1
+  eval_split: 0.1
+  raw_path: null
+  original_path: null
+  text_columns: []
+  target_columns: []
+  label_maps: {}
+  instruction: ''
+  output_dir: null
+  train_fraction: null
+  split: null
+optimizer:
+  name: adamw
+  learning_rate: 2.0e-05
+  weight_decay: 0.0
+  betas:
+  - 0.9
+  - 0.999
+  eps: 1.0e-08
+  momentum: 0.0
+generation:
+  max_new_tokens: 512
+  temperature: 1.0
+  top_p: 0.95
+  top_k: 64
+  do_sample: true
+  repetition_penalty: 1.0
+tool_calling:
+  enabled: false
+  tool_choice: auto
+  tools: []
+structured_output:
+  enabled: false
+  schema_path: null
+  strict: true
+training:
+  enabled: false
+  method: lora
+  epochs: 3.0
+  batch_size: 2
+  grad_accum_steps: 8
+  warmup_ratio: 0.03
+  max_length: 1024
+  lora_r: 8
+  lora_alpha: 16
+  lora_dropout: 0.05
+  prefix_length: 30
+  adapters_dim: 64
+  bitfit_bias_params: []
+  freeze_modules: []
+  logging_steps: 10
+  save_steps: 100
+  eval_steps: 100
+  output_dir: ./finetuned
+  merge_adapter: false
+prompt: null
+prompt_file: null
+username: null
+system_prompt: You are a helpful assistant.
+seed: 42
+output_dir: outputs
+
+[2026-09-19 19:23:12,147][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/google/gemma-3-270m-it/resolve/main/config.json "HTTP/1.1 200 OK"
+[2026-09-19 19:23:12,270][httpx][INFO] - HTTP Request: HEAD https://huggingface.co/google/gemma-3-270m-it/resolve/main/tokenizer_config.json "HTTP/1.1 200 OK"
+[2026-09-19 19:23:12,327][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/google/gemma-3-270m-it/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+[2026-09-19 19:23:12,376][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/google/gemma-3-270m-it/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+[2026-09-19 19:23:12,925][httpx][INFO] - HTTP Request: GET https://huggingface.co/api/models/google/gemma-3-270m-it "HTTP/1.1 200 OK"
+[2026-09-19 19:23:12,938][src.data_services][INFO] - Prepared 10 tokenized training examples.
+[2026-09-19 19:23:12,939][src.data_services][INFO] - Prepared 3 tokenized training examples.

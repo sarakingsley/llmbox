@@ -1,0 +1,3 @@
+- mode=prepare_data
+- data.type=jsonl
+- data.path=/Users/skingsle/Documents/llmbox/llm_box/data/transformed_datasets/lsatexample.jsonl

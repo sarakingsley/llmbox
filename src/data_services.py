@@ -1089,7 +1089,25 @@ class TrainingDataLoader:
         This strategy is intentionally conservative. Templates that change
         earlier text depending on later messages are rejected.
         """
+        def tokenize_prefix(
+            prefix_messages: list[dict[str, str]],
+            *,
+            add_generation_prompt: bool,
+        ) -> list[int]:
+            token_ids = tokenizer.apply_chat_template(
+                prefix_messages,
+                tokenize=True,
+                add_generation_prompt=add_generation_prompt,
+                return_dict=False,      # explicit: we want a flat list of IDs
+                truncation=False,
+                padding=False,
+            )
+            # Defensive: some tokenizer versions return a BatchEncoding anyway.
+            if isinstance(token_ids, Mapping):
+                token_ids = token_ids["input_ids"]
+            return self._validate_token_ids(token_ids)
 
+        ''' SK EDITED: september 19 2026 around 7:22 PM ET
         def tokenize_prefix(
             prefix_messages: list[dict[str, str]],
             *,
@@ -1103,6 +1121,7 @@ class TrainingDataLoader:
                 padding=False,
             )
             return self._validate_token_ids(token_ids)
+        '''
 
         full_ids = tokenize_prefix(
             messages,

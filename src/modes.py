@@ -486,13 +486,21 @@ class Modes:
         collator = self.dataloader._make_collator(tokenizer.pad_token_id)
         optimizer = self._build_optimizer(cfg, model)
 
+        import inspect                                                         # sk edited: sept. 19 2026 around 7:40 PM EST
+        _ta_params = inspect.signature(TrainingArguments.__init__).parameters  # sk edited: sept. 19 2026 around 7:40 PM EST
+        if "warmup_ratio" in _ta_params:            # older transformers       # sk edited: sept. 19 2026 around 7:40 PM EST
+            warmup_kwargs = {"warmup_ratio": cfg.training.warmup_ratio}        # sk edited: sept. 19 2026 around 7:40 PM EST
+        else:                                       # newer: float < 1 = ratio of total steps   # sk edited: sept. 19 2026 around 7:40 PM EST
+            warmup_kwargs = {"warmup_steps": cfg.training.warmup_ratio}        # sk edited: sept. 19 2026 around 7:40 PM EST
+
         training_args = TrainingArguments(
             output_dir=cfg.training.output_dir,
             num_train_epochs=cfg.training.epochs,
             per_device_train_batch_size=cfg.training.batch_size,
             per_device_eval_batch_size=cfg.training.batch_size,
             gradient_accumulation_steps=cfg.training.grad_accum_steps,
-            warmup_ratio=cfg.training.warmup_ratio,
+            #warmup_ratio=cfg.training.warmup_ratio,                        # sk edited: sept. 19 2026 around 7:40 PM EST
+            **warmup_kwargs,                                                # sk edited: sept. 19 2026 around 7:40 PM EST
             logging_steps=cfg.training.logging_steps,
             save_steps=cfg.training.save_steps,
             save_total_limit=2,

@@ -70,7 +70,10 @@ class ModelConfig:
     #   parsed and dispatched locally. See GenerationManager.run_tool_turn.
     tool_calling_format: str = "generic"       # generic | functools_prompt
     chat_template_kwargs: Dict[str, Any] = field(default_factory=dict)
-
+    # prepare_data: model-specific data formatting options
+    add_prefix: Optional[str] = None           # for prepare_data - string to prepend to prompt
+    add_suffix: Optional[str] = None           # for prepare_data - string to append to completion
+    add_specialtokens: Optional[List[str]] = field(default_factory=list)  # special tokens to add to each record if needed
 
 @dataclass
 class GenerationConfig:
@@ -147,17 +150,31 @@ class TrainingConfig:
 @dataclass
 class DataConfig:
     """Where training/finetuning data comes from. One YAML file per source
-    type under conf/data/."""
-    type: str = MISSING                # chat_log | jsonl
+    type under conf/data/.
+    For prepare_data mode, allow additional attributes for raw/original path,
+    text/target columns, label maps, instruction, output_dir, etc."""
+    type: str = MISSING                # chat_log | jsonl | other future source types
     path: str = MISSING
     min_turns: int = 1                 # chat_log only: skip sessions with fewer turns than this
     eval_split: float = 0.1            # fraction of conversations held out for eval (0 disables it)
+    # Extra fields for prepare_data
+    raw_path: Optional[str] = None     # optional: path to original data to reformat
+    original_path: Optional[str] = None # optional alias for raw_path
+    text_columns: Optional[List[str]] = field(default_factory=list)    # For prepare_data/source conversion
+    target_columns: Optional[List[str]] = field(default_factory=list)  # For prepare_data/source conversion
+    label_maps: Optional[Dict[str, Dict[Any, Any]]] = field(default_factory=dict)   # for prepare_data
+    instruction: Optional[str] = ""    # for prepare_data, optional prompt-instruction
+    output_dir: Optional[str] = None   # for prepare_data: custom output dir for storing transformed files
+    train_fraction: Optional[float] = None  # for prepare_data - train/test split
+    split: Optional[float] = None          # alias for train_fraction
 
 @dataclass
 class ModeConfig:
-    """Which of the six run modes to execute. One YAML file per mode under
-    conf/mode/."""
-    name: str = MISSING                # chat | generate | tool_calling | structured_output | train | finetune
+    """Which of the seven run modes to execute. One YAML file per mode under
+    conf/mode/.
+    Now supports prepare_data in addition to chat, generate, tool_calling, structured_output, train, finetune.
+    """
+    name: str = MISSING                # chat | generate | tool_calling | structured_output | train | finetune | prepare_data
 
 @dataclass
 class Config:

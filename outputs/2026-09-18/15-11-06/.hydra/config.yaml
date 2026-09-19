@@ -1,0 +1,67 @@
+model:
+  name: gemma3_270m_it
+  source: local
+  model_id: google/gemma-3-270m-it
+  local_path: /Users/skingsle/Documents/llmbox/models/llms/google/gemma-3-270m-it
+  architecture: gemma3_text
+  dtype: bfloat16
+  device: auto
+  trust_remote_code: false
+  supports_tool_calling: false
+  supports_structured_output: true
+  tool_calling_format: generic
+  chat_template_kwargs: {}
+mode:
+  name: structured_output
+data:
+  type: chat_log
+  path: ../chat_log
+  min_turns: 1
+  eval_split: 0.1
+optimizer:
+  name: adamw
+  learning_rate: 2.0e-05
+  weight_decay: 0.0
+  betas:
+  - 0.9
+  - 0.999
+  eps: 1.0e-08
+  momentum: 0.0
+generation:
+  max_new_tokens: 512
+  temperature: 1.0
+  top_p: 0.95
+  top_k: 64
+  do_sample: true
+  repetition_penalty: 1.0
+tool_calling:
+  enabled: false
+  tool_choice: auto
+  tools: []
+structured_output:
+  enabled: true
+  schema_path: /Users/skingsle/Documents/llmbox/llm_box/data/pydantic_models/structuredoutput.json
+  strict: false
+training:
+  enabled: false
+  method: full
+  epochs: 3.0
+  batch_size: 2
+  grad_accum_steps: 8
+  warmup_ratio: 0.03
+  max_length: 1024
+  lora_r: 8
+  lora_alpha: 16
+  lora_dropout: 0.05
+  logging_steps: 10
+  save_steps: 100
+  eval_steps: 100
+  output_dir: ./finetuned
+  merge_adapter: false
+prompt: John Smith and Bob Whatever are going to the party
+prompt_file: null
+username: null
+system_prompt: For each name in the user prompt use the structuredoutput format to
+  print the name appropriately but make sure both names have a record
+seed: 42
+output_dir: outputs

@@ -1,0 +1,67 @@
+{
+  "session": {
+    "session_id": "9a103ad7",
+    "started_at": "2026-09-18T18:53:46.742483+00:00",
+    "model": {
+      "name": "phi4_instruct",
+      "source": "local",
+      "model_id": "microsoft/Phi-4-mini-instruct",
+      "local_path": "/Users/skingsle/Documents/llmbox/models/llms/microsoft/phi-4-mini-instruct",
+      "architecture": "phi3",
+      "dtype": "bfloat16",
+      "device": "auto",
+      "trust_remote_code": false,
+      "supports_tool_calling": true,
+      "supports_structured_output": true,
+      "tool_calling_format": "functools_prompt",
+      "chat_template_kwargs": {}
+    },
+    "generation": {
+      "max_new_tokens": 512,
+      "temperature": 1.0,
+      "top_p": 0.95,
+      "top_k": 64,
+      "do_sample": true,
+      "repetition_penalty": 1.0
+    },
+    "system_prompt": "You are a helpful assistant."
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "user": {
+        "username": "user",
+        "content": "hello, good afternoon, what's your name?",
+        "timestamp": "2026-09-18T19:00:53.234336+00:00"
+      },
+      "assistant": {
+        "content": "Good afternoon! As an AI, I davon abweichen von der realen Welt, aber in diesem*******/\ncontext, you could say I'm known as Phi, representing my Phonetic Interpreter, designed to understand and respond to your prompts. How can I assist you today?",
+        "timestamp": "2026-09-18T19:00:53.234357+00:00"
+      }
+    },
+    {
+      "turn": 2,
+      "user": {
+        "username": "user",
+        "content": "what day of the week is it?",
+        "timestamp": "2026-09-18T19:01:21.134261+00:00"
+      },
+      "assistant": {
+        "content": "As an AI, I don't experience days as humans do, but I can tell you what day it is based on the current system date. To find out the day of the week for today, please check your local calendar or use a device's clock or world clock feature.\n\nIf you'd like, I can guide you through that process:\n\n1. Check the date and day on your computer or mobile device.\n2. Look at the time, and if you see it, it should display the time of day (AM or PM) and possibly the day of the week.\n3. Alternatively, you can open a web browser and type \"today is\" followed by the date in the search bar, and it should give you today's date with the day of the week.\n\nWould you like assistance with a different task?",
+        "timestamp": "2026-09-18T19:01:21.134268+00:00"
+      }
+    },
+    {
+      "turn": 3,
+      "user": {
+        "username": "user",
+        "content": "what is the best dog to adopt?",
+        "timestamp": "2026-09-18T19:02:17.481142+00:00"
+      },
+      "assistant": {
+        "content": "It's wonderful that you're considering adopting a dog, as pets can bring tremendous joy and companionship into people's lives. However, what is the \"best\" dog to adopt can vary greatly depending on individual needs, lifestyle, and preferences. Here are some considerations to help you find the perfect match:\n\n1. **Activity Level**: If you lead an active lifestyle and enjoy regular walks and playtime, a high-energy dog like a Border Collie, Labrador Retriever, or Australian Shepherd might be a great fit. If you're less active, consider a dog with a more relaxed demeanor, such as a Bulldog, Basset Hound, or Cavalier King Charles Spaniel.\n\n2. **Size and Space**: Consider the size of your living space. Smaller breeds like Chihuahuas, Poodles, and Dachshunds can be suitable for apartment living, while larger breeds like Golden Retrievers, Rottweilers, and German Shepherds will need more space to roam.\n\n3. **Grooming Needs**: Some dogs require regular grooming, such as Bichon Frise, Shih Tzu, or Poodle, whereas others shed less but may still require brushing, like the Beagle or the Shetland Sheepdog.\n\n4. **Energy Level**: Dog breeds comeiverse, ranging from low-energy to high-energy. If you prefer a dog that can rest comfortably while you sleep, you might choose a breed like the Cavalier King Charles Spaniel or a Greyhound, which are known for their calm natures.\n\n5. **Allergies**: If there are any allergies in your household, you'll need a hypoallergenic breed like the French Bulldog, Poodle, or Bichon Frise.\n\n6. **Temperament**: Some breeds are more sociable and affectionate, like the Labrador Retriever or Golden Retriever, while others are more independent, like the Akita or the Shiba Inu.\n\n7. **Breed-Specific Health Issues**: Research breeds that are more prone to health problems to be prepared for any necessary care and to ensure you can provide for their needs.\n\nTo find the best dog for you, consider contacting local shelters and rescues, where you can meet different breeds and interact with them. Some organizations also match dogs with potential adopters based on lifestyle and preferences. Always conduct thorough research and consider adopting a dog that may need a little work, as they can provide plenty of love and companionship.",
+        "timestamp": "2026-09-18T19:02:17.481358+00:00"
+      }
+    }
+  ]
+}

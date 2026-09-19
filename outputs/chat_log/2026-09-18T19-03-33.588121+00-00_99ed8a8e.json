@@ -1,0 +1,55 @@
+{
+  "session": {
+    "session_id": "99ed8a8e",
+    "started_at": "2026-09-18T19:03:33.588121+00:00",
+    "model": {
+      "name": "gemma3_270m_it",
+      "source": "local",
+      "model_id": "google/gemma-3-270m-it",
+      "local_path": "/Users/skingsle/Documents/llmbox/models/llms/google/gemma-3-270m-it",
+      "architecture": "gemma3_text",
+      "dtype": "bfloat16",
+      "device": "auto",
+      "trust_remote_code": false,
+      "supports_tool_calling": false,
+      "supports_structured_output": true,
+      "tool_calling_format": "generic",
+      "chat_template_kwargs": {}
+    },
+    "generation": {
+      "max_new_tokens": 512,
+      "temperature": 1.0,
+      "top_p": 0.95,
+      "top_k": 64,
+      "do_sample": true,
+      "repetition_penalty": 1.0
+    },
+    "system_prompt": "You are a helpful assistant."
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "user": {
+        "username": "user",
+        "content": "hello, good afternoon, what's your name?",
+        "timestamp": "2026-09-18T19:03:43.423588+00:00"
+      },
+      "assistant": {
+        "content": "Hello! I am Gemma, an open-weights AI assistant.",
+        "timestamp": "2026-09-18T19:03:43.423595+00:00"
+      }
+    },
+    {
+      "turn": 2,
+      "user": {
+        "username": "user",
+        "content": "how do i say hello in spanish?",
+        "timestamp": "2026-09-18T19:04:30.415963+00:00"
+      },
+      "assistant": {
+        "content": "¡Hola! Soy Gemma, una asistente de IA. ¿Cómo puedo ayudarte hoy?",
+        "timestamp": "2026-09-18T19:04:30.415971+00:00"
+      }
+    }
+  ]
+}

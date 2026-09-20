@@ -62,6 +62,13 @@ from src.data_services import (
 
 from src import metrics as training_metrics
 
+# The following import is the minimal external evaluation interface.
+# It is assumed to provide MetricsTracker with .start()/.stop(trainer) as in original src.metrics.
+#try:
+   # from src.evaluator import MetricsTracker
+#except ImportError:
+   # MetricsTracker = None
+
 class Modes:
 
     def __init__(self):
@@ -558,3 +565,18 @@ class Modes:
         if not cfg.training.enabled:
             raise ValueError("mode=finetune requires training.enabled=true")
         self._run_training(cfg, allow_lora=True)
+
+    # --------------------------------------------------------------------------
+    # evaluation -- distinct evaluation mode using src/evaluator.py.
+    # Must NEVER run training_metrics logic from train or finetune.
+    # --------------------------------------------------------------------------
+    def run_evaluation(self, cfg) -> None:
+        """Run LLM evaluation (distinct mode). Calls src.evaluator functions.
+        This mode is SEPARATE from train/finetune and never runs training_metrics.
+        """
+        import src.evaluator as llm_evaluation
+        try:
+            llm_evaluation.run_evaluation(cfg)
+        except Exception as e:
+            self.log.error(f"Evaluation mode failed: {e}")
+            raise

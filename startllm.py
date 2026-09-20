@@ -116,6 +116,7 @@ _DISPATCH = {
     "train": modes.run_train,
     "finetune": modes.run_finetune,
     "prepare_data": modes.run_prepare_data,
+    "evaluate": modes.run_evaluation
 }
 
 
@@ -259,7 +260,7 @@ def llmbox(cfg: Config) -> None:
         # Now input_path has a usable extension
     _DISPATCH[mode_name](cfg)
     match mode_name:
-        case "chat" | "generate" | "structured_output" | "train" | "finetune":
+        case "chat" | "generate" | "structured_output" | "train" | "finetune" | "evaluate":
             detect_and_warn_llm_api_usage(cfg)
         case "prepare_data":
             pass

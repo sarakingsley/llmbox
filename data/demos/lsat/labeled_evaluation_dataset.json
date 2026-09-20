@@ -1,0 +1,52 @@
+[
+  {
+    "query": "Input:\nStimulusPassage:\nSix employees—Farid, Gao, Hines, Ibarra, Juno, and Kwan—are scheduled to present at a conference, one at a time, in a single line of six presentation slots numbered 1 through 6, from earliest to latest. The following constraints apply: Gao presents at some time before Hines. Ibarra presents immediately before or immediately after Juno. Kwan does not present first or last. Farid presents either first or last.\n\nQuestionStem:\nIf Kwan presents third and Gao presents second, which one of the following could be true?\n\nOutput:\n",
+    "response": "{\"OptionA\": \"Farid presents first.\", \"OptionB\": \"Hines presents second.\", \"OptionC\": \"Ibarra presents first.\", \"OptionD\": \"Juno presents sixth and Ibarra presents fifth.\", \"OptionE\": \"Gao presents fourth.\", \"CorrectAnswer\": \"A\"}",
+    "rating": 5
+  },
+  {
+    "query": "Input:\nStimulusPassage:\n(Same passage as RC-03.)\n\nQuestionStem:\nThe author's attitude toward the temperature-based explanation of coral bleaching is best described as one of\n\nOutput:\n",
+    "response": "{\"OptionA\": \"qualified acceptance, viewing it as valid but incomplete.\", \"OptionB\": \"outright rejection in light of newer evidence.\", \"OptionC\": \"unqualified endorsement with no reservations.\", \"OptionD\": \"indifference, since the author considers the question unimportant.\", \"OptionE\": \"skepticism bordering on dismissal.\", \"CorrectAnswer\": \"A\"}",
+    "rating": 5
+  },
+  {
+    "query": "Input:\nStimulusPassage:\nFour interns—Ng, Ochoa, Patel, and Quinn—are each assigned to exactly one of three departments—Marketing, Legal, or Finance—and each department is assigned at least one intern. Ng and Ochoa are not assigned to the same department. Patel is assigned to Legal. If Quinn is assigned to Marketing, then Ng is assigned to Finance.\n\nQuestionStem:\nWhich one of the following is a complete and accurate list of departments that could be assigned zero, one, or two interns consistent with the rules, if Ochoa is assigned to Finance?\n\nOutput:\n",
+    "response": "{\"OptionA\": \"Marketing could have one or two interns; Finance could have one or two interns; Legal has exactly one intern.\", \"OptionB\": \"Marketing must have exactly two interns.\", \"OptionC\": \"Finance must have exactly two interns.\", \"OptionD\": \"Legal could have zero interns.\", \"OptionE\": \"Marketing must have zero interns.\", \"CorrectAnswer\": \"A\"}",
+    "rating": 3
+  },
+  {
+    "query": "Input:\nStimulusPassage:\nHistorians of technology have generally treated the adoption of the printing press in fifteenth-century Europe as a rapid, revolutionary break from manuscript culture. A closer look at regional records complicates this narrative. In some cities, printers and scribes coexisted for over a century, with scribes retaining a market for luxury manuscripts, liturgical texts, and documents requiring official seals that print technology could not easily replicate. In other regions, print displaced manuscript production within a generation. This unevenness suggests that the press's impact depended heavily on local economic and institutional conditions rather than on the technology's inherent properties alone.\n\nQuestionStem:\nWhich one of the following best describes the organization of the passage?\n\nOutput:\n",
+    "response": "{\"OptionA\": \"A commonly held view is presented, then complicated with regional evidence, leading to a more qualified conclusion.\", \"OptionB\": \"Two historians' competing theories are described and then reconciled through a compromise position.\", \"OptionC\": \"A chronological account of the printing press's invention is given, followed by its modern applications.\", \"OptionD\": \"A claim is made and then refuted entirely by a single counterexample.\", \"OptionE\": \"An experiment is described, and its methodology is critiqued.\", \"CorrectAnswer\": \"A\"}",
+    "rating": 2
+  },
+  {
+    "query": "Input:\nStimulusPassage:\nIn the past decade, the number of registered beekeepers in the region has more than doubled. Yet the total regional honey production has remained essentially flat.\n\nQuestionStem:\nWhich of the following, if true, most helps to explain the discrepancy described above?\n\nOutput:\n",
+    "response": "{\"OptionA\": \"Most of the new beekeepers keep only one or two hives as a hobby and harvest little or no honey for sale.\", \"OptionB\": \"The price of honey has risen faster than the rate of inflation over the past decade.\", \"OptionC\": \"Beekeeping courses have become more widely available at community colleges.\", \"OptionD\": \"Several long-established commercial beekeeping operations closed during the decade.\", \"OptionE\": \"Imported honey now accounts for a larger share of the regional market.\", \"CorrectAnswer\": \"A\"}",
+    "rating": 1
+  },
+  {
+    "query": "Input:\nStimulusPassage:\nA law firm is assigning exactly four of seven associates—Reyes, Singh, Toure, Uma, Vance, Wu, and Yang—to a single new case team. The following conditions govern the assignment: If Reyes is assigned, then Singh is also assigned. Toure and Uma cannot both be assigned. Exactly one of Vance or Wu is assigned. Yang is assigned only if Toure is assigned.\n\nQuestionStem:\nWhich one of the following could be a complete and accurate list of the associates assigned to the case team?\n\nOutput:\n",
+    "response": "{\"OptionA\": \"Reyes, Singh, Toure, Vance\", \"OptionB\": \"Reyes, Singh, Uma, Yang\", \"OptionC\": \"Toure, Uma, Vance, Wu\", \"OptionD\": \"Singh, Toure, Uma, Yang\", \"OptionE\": \"Reyes, Toure, Vance, Wu\", \"CorrectAnswer\": \"A\"}",
+    "rating": 3
+  },
+  {
+    "query": "Input:\nStimulusPassage:\nMarine biologists studying coral bleaching have traditionally focused on rising sea temperatures as the primary driver. Recent research, however, has drawn attention to a secondary factor: the loss of symbiotic fish species that graze on algae competing with coral for space and light. In a controlled reef enclosure study, sections with intact grazer populations exhibited significantly lower bleaching rates than sections where grazers had been experimentally removed, even when both sections were exposed to identical thermal stress. This finding does not overturn the temperature hypothesis but suggests that ecosystem-level interactions can modulate coral resilience independently of temperature.\n\nQuestionStem:\nThe reference to the controlled reef enclosure study primarily serves to\n\nOutput:\n",
+    "response": "{\"OptionA\": \"provide empirical support for the claim that grazer loss affects coral bleaching independently of temperature.\", \"OptionB\": \"demonstrate that rising sea temperature is not a genuine cause of coral bleaching.\", \"OptionC\": \"cast doubt on the reliability of prior temperature-based bleaching research.\", \"OptionD\": \"introduce a new species of grazing fish not previously known to science.\", \"OptionE\": \"argue that algae is beneficial to coral reef ecosystems.\", \"CorrectAnswer\": \"A\"}",
+    "rating": 4
+  },
+  {
+    "query": "Input:\nStimulusPassage:\nLegal scholars have long debated whether appellate courts should defer to trial courts' factual findings or review them independently. Proponents of deference argue that trial judges and juries directly observe witness testimony and are therefore better positioned to assess credibility than appellate judges working from a written transcript. Critics counter that deference can entrench erroneous findings, particularly in cases involving complex documentary or statistical evidence where demeanor is largely irrelevant to accuracy. Some scholars propose a middle path: a sliding scale of deference calibrated to the type of evidence at issue, with greater deference for credibility-based findings and less for findings derived primarily from documents or expert reports.\n\nQuestionStem:\nWhich one of the following most accurately expresses the main point of the passage?\n\nOutput:\n",
+    "response": "{\"OptionA\": \"Scholars disagree about how much deference appellate courts owe trial courts' factual findings, and some suggest the degree of deference should vary with the type of evidence involved.\", \"OptionB\": \"Appellate courts should always defer to trial courts because trial judges observe witness demeanor directly.\", \"OptionC\": \"Deference to trial court findings inevitably entrenches factual errors in complex cases.\", \"OptionD\": \"Documentary and statistical evidence should never be reviewed independently by appellate courts.\", \"OptionE\": \"The debate over appellate deference has been definitively resolved in favor of a sliding-scale approach.\", \"CorrectAnswer\": \"A\"}",
+    "rating": 5
+  },
+  {
+    "query": "Input:\nStimulusPassage:\nA gallery is selecting works for an exhibit from among eight artists: Bell, Cruz, Diallo, Espinoza, Farrow, Grant, Han, and Ito. Selections must satisfy: If Bell is selected, then Cruz is not selected. Either Diallo or Espinoza is selected, but not both. If Farrow is not selected, then Grant is selected. Han is selected if and only if Ito is selected.\n\nQuestionStem:\nIf Cruz and Grant are both selected, which one of the following CANNOT be true?\n\nOutput:\n",
+    "response": "{\"OptionA\": \"Bell is selected.\", \"OptionB\": \"Diallo is selected.\", \"OptionC\": \"Espinoza is selected.\", \"OptionD\": \"Han and Ito are both selected.\", \"OptionE\": \"Farrow is not selected.\", \"CorrectAnswer\": \"A\"}",
+    "rating": 5
+  },
+  {
+    "query": "Input:\nStimulusPassage:\nA researcher must distribute exactly nine samples—three each of types P, Q, and R—among three labs: Lab 1, Lab 2, and Lab 3, so that each lab receives exactly three samples. No lab may receive more than one sample of the same type. Lab 1 receives at least one P sample. Lab 2 receives no R samples.\n\nQuestionStem:\nIf Lab 3 receives exactly one sample of each type, which one of the following must be true?\n\nOutput:\n",
+    "response": "{\"OptionA\": \"Lab 2 receives a P sample.\", \"OptionB\": \"Lab 1 receives an R sample.\", \"OptionC\": \"Lab 2 receives two Q samples.\", \"OptionD\": \"Lab 1 receives a Q sample.\", \"OptionE\": \"Lab 3 receives the same number of P samples as Lab 1.\", \"CorrectAnswer\": \"A\"}",
+    "rating": 4
+  }
+]

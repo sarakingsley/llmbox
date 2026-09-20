@@ -1,0 +1,10 @@
+- mode=finetune
+- training.enabled=true
+- training.method=lora
+- data.type=jsonl
+- data.path=/Users/skingsle/Documents/llmbox/llm_box/outputs/train.jsonl
+- model.source=local
+- model.local_path=/Users/skingsle/Documents/llmbox/models/llms/google/gemma-3-270m-it
+- training.output_dir=./finetuned
+- training.grad_accum_steps=1
+- training.logging_steps=1

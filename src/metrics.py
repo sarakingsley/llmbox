@@ -268,11 +268,11 @@ def _fmt_duration(seconds: float) -> str:
 
 
 _FLOPS_LEVELS = [
-    (1e15, 1, "Very light", "The amount of computation compares to a quick classroom demo. Hardware Reference: your laptop or desktop machine."),
-    (1e17, 2, "Light", "The amount of computation compares to a small fine-tuning run, achievable on non-production grade hardware (less memory, CPU or GPU). Hardware References: NVIDIA RTX 3060/4060/4070; AMD RX 7600/7800 XT)"),
-    (1e19, 3, "Moderate", "The amount of computation compares to a substantial fine-tuning project, needing development grade hardward (virtual machine, more memory, CPU and/or GPU). Hardware References: NVIDIA L4, L40, L40S; A10; AMD MI210)"),
-    (1e21, 4, "Heavy", "The amount of computation compares to a large research-lab job. Advertised Hardware Requirements: NVIDIA H100; AMD MI300X."),
-    (float("inf"), 5, "Extreme", "The amount of computation compares to frontier-model scale. Advertised Hardware Requirements: DGX/HGX systems; NVIDIA GB200 NVL72; TPU pods; large AMD Instinct clusters "),
+    (1e15, 1, "Very light", "a quick classroom demo on your laptop or desktop machine."),
+    (1e17, 2, "Light", "a small fine-tuning run on non-production grade hardware (hardware References: NVIDIA RTX 3060/4060/4070; AMD RX 7600/7800 XT)"),
+    (1e19, 3, "Moderate", "a substantial fine-tuning project on development grade hardware (hardware References: NVIDIA L4, L40, L40S; A10; AMD MI210)"),
+    (1e21, 4, "Heavy", "a large research-lab job (hardware References: NVIDIA H100; AMD MI300X."),
+    (float("inf"), 5, "Extreme", "a frontier-model scale training job (hardware References: DGX/HGX systems; NVIDIA GB200 NVL72; TPU pods; large AMD Instinct clusters "),
 ]
 
 

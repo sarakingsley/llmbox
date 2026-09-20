@@ -1,0 +1,7 @@
+- mode=finetune
+- training.enabled=true
+- training.method=lora
+- data.type=jsonl
+- data.path=/Users/skingsle/Documents/llmbox/llm_box/outputs/train.jsonl
+- model.source=local
+- model.local_path=/Users/skingsle/Documents/llmbox/models/llms/microsoft/phi-4-mini-instruct

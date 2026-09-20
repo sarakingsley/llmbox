@@ -1,9 +1,9 @@
 ---
-base_model: /Users/skingsle/Documents/llmbox/models/llms/google/gemma-3-270m-it
+base_model: /Users/skingsle/Documents/llmbox/models/llms/microsoft/phi-4-mini-instruct
 library_name: peft
 pipeline_tag: text-generation
 tags:
-- base_model:adapter:/Users/skingsle/Documents/llmbox/models/llms/google/gemma-3-270m-it
+- base_model:adapter:/Users/skingsle/Documents/llmbox/models/llms/microsoft/phi-4-mini-instruct
 - lora
 - transformers
 ---

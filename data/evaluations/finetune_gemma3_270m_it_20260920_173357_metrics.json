@@ -1,0 +1,29 @@
+{
+  "LLM Training Job Economic Metrics": {
+    "elapsed_time": 33.3324921131134,
+    "max_memory_bytes": 612614144,
+    "min_memory_bytes": 22134784,
+    "median_memory_bytes": 105103360,
+    "total_memory_bytes": 25769803776,
+    "memory_used_percent": 2.3772557576497397,
+    "avg_cpu_util_percent": 16.123529411764707,
+    "avg_gpu_util_percent": null,
+    "flops_estimate": 1132603109277696.0,
+    "flops_level": 2,
+    "flops_explanation": "Level 2 of 5 (Light), comparable to a small fine-tuning run on non-production grade hardware (hardware References: NVIDIA RTX 3060/4060/4070; AMD RX 7600/7800 XT). A FLOP is one arithmetic operation (an add or multiply) on a decimal number; this job performed about 1.1e+15 of them. That is roughly 9.1 seconds of work for one NVIDIA A100 GPU at typical efficiency, or about 3.6e-07% of the compute used to train GPT-3.",
+    "energy_kwh": 0.0006018366631534366,
+    "carbon_kg_estimate": 0.00024073466526137465,
+    "carbon_explanation": "About 0.00 km of driving in an average gasoline car. Inputs: no GPU detected; 65 W CPU (assumed); grid intensity 0.4 kg CO2e/kWh.",
+    "token_budget_used_percent": 4.9152,
+    "tokens_processed": 49152,
+    "tokens_remaining": 950848,
+    "token_budget": 1000000,
+    "tokens_source": "estimated from steps x batch x max_length (includes padding)"
+  },
+  "LLM Training Performance": {
+    "loss": 2.0778989791870117,
+    "perplexity": 7.987669013161436,
+    "eval_loss": 1.4117531776428223,
+    "eval_perplexity": 4.103142639921284
+  }
+}

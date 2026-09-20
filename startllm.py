@@ -17,7 +17,7 @@
 '''
 
 """
-configurator.py
+startllm.py
 
 Single entry point for running google/gemma-3-270m-it or microsoft/phi-4
 (or any local checkout of either) in one of six modes, fully driven by a
@@ -74,7 +74,7 @@ any of it can be swapped from the command line:
         training.enabled=true training.method=full data=jsonl data.path=my_data.jsonl \
         optimizer=sgd optimizer.learning_rate=1e-4
 
-Run `python configurator.py --cfg job` to print the fully composed config
+Run `python3 startllm.py --cfg job` to print the fully composed config
 for any combination of overrides without loading a model -- handy for
 sanity-checking a command before it downloads/loads anything.
 """

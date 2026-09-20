@@ -569,14 +569,160 @@ class Modes:
     # --------------------------------------------------------------------------
     # evaluation -- distinct evaluation mode using src/evaluator.py.
     # Must NEVER run training_metrics logic from train or finetune.
+    # Walk user through evaluation tasks one by one interactively in the terminal.
     # --------------------------------------------------------------------------
     def run_evaluation(self, cfg) -> None:
         """Run LLM evaluation (distinct mode). Calls src.evaluator functions.
         This mode is SEPARATE from train/finetune and never runs training_metrics.
+        Walks the user through EVALUATION tasks ONE BY ONE interactively.
         """
         import src.evaluator as llm_evaluation
-        try:
-            llm_evaluation.run_evaluation(cfg)
-        except Exception as e:
-            self.log.error(f"Evaluation mode failed: {e}")
-            raise
+        import os
+        import sys
+        from pathlib import Path
+
+        print("[EVALUATION MODE] Entering interactive terminal evaluation suite.")
+        # Step 1: Prepare evaluation inputs (select test split or other evaluation file)
+        data_path = ""
+        sample_size = 10
+        print("\nStep 1: Prepare Evaluation Inputs")
+        print("-------------------------------")
+        # Auto-pick test.jsonl if present in cfg or default, or prompt user
+        eval_candidates = []
+        possible_eval_paths = []
+        data_cfg = getattr(cfg, 'data', None)
+        if data_cfg is not None:
+            base_dir = None
+            if hasattr(data_cfg, 'output_dir') and data_cfg.output_dir:
+                base_dir = Path(data_cfg.output_dir).expanduser()
+            elif hasattr(cfg, 'output_dir') and cfg.output_dir:
+                base_dir = Path(cfg.output_dir).expanduser()
+            if base_dir:
+                possible_eval_paths.extend([
+                    base_dir / "test.jsonl",
+                    base_dir / "evaluation_dataset.json",
+                ])
+            # Also suggest data_cfg.path if it exists and is not a train file
+            if hasattr(data_cfg, 'path') and data_cfg.path:
+                possible_eval_paths.append(Path(data_cfg.path).expanduser())
+
+        # Add cwd options for fallback
+        for fn in ["test.jsonl", "evaluation_dataset.json", "data/test.jsonl", "eval.jsonl"]:
+            possible_eval_paths.append(Path(fn))
+        for p in possible_eval_paths:
+            if p.exists() and p.is_file():
+                eval_candidates.append(p)
+        data_path = ""
+        if eval_candidates:
+            print("Available evaluation dataset(s):")
+            for i, c in enumerate(eval_candidates, 1):
+                print(f"  [{i}] {c}")
+            sel = input(f"Select evaluation data file [1-{len(eval_candidates)}] or enter path: ").strip()
+            if sel.isdigit() and 1 <= int(sel) <= len(eval_candidates):
+                data_path = str(eval_candidates[int(sel) - 1])
+            else:
+                data_path = sel or str(eval_candidates[0])
+        else:
+            data_path = input("Enter path to evaluation input file (.jsonl/.json): ").strip()
+        while not (os.path.isfile(data_path) and data_path.lower().endswith(('.json', '.jsonl'))):
+            data_path = input("  File not found or not a .json/.jsonl. Enter path: ").strip()
+
+        while True:
+            inp = input("Sample size for evaluation (default=10): ").strip()
+            if not inp:
+                sample_size = 10
+                break
+            if inp.isdigit() and int(inp) > 0:
+                sample_size = int(inp)
+                break
+            print("  Please enter a positive integer.")
+        kind = "auto"
+        pi = llm_evaluation.PrepareEvaluationInput(data_path, sample_size=sample_size, kind=kind)
+        formatted_eval_data = pi.format_for_evaluation()
+        eval_out_path = Path(data_path).parent / "evaluation_dataset.json"
+        pi.save_evaluation_dataset(str(eval_out_path))
+        print(f"[OK] Wrote formatted eval sample to {eval_out_path}")
+
+        # Step 2: Human Evaluation
+        print("\nStep 2: Human Rating of LLM Responses")
+        print("------------------------------------")
+        print("You will now label the evaluation sample via interactive ratings.")
+        h = llm_evaluation.HumanEvaluation(str(eval_out_path))
+        labeled_path = h.run()
+        print(f"[INFO] Human-labeled evaluation sample saved as {labeled_path}")
+
+        # Step 3: Agreement measure (if possible)
+        print("\nStep 3: (Optional) Inter-rater Agreement")
+        print("----------------------------------------")
+        print("If you have TWO labeled human judgment files (e.g., from two raters), you can measure agreement.")
+        want_agreement = input("Compute agreement between two raters? [y/N]: ").strip().lower().startswith('y')
+        if want_agreement:
+            l1 = input("Path to first labeled dataset (JSON): ").strip()
+            l2 = input("Path to second labeled dataset (JSON): ").strip()
+            try:
+                with open(l1, encoding="utf-8") as f1, open(l2, encoding="utf-8") as f2:
+                    d1 = json.load(f1)
+                    d2 = json.load(f2)
+                labels1 = [ex.get("rating") for ex in d1]
+                labels2 = [ex.get("rating") for ex in d2]
+                pa = llm_evaluation.AgreementMeasures.percent_agreement(labels1, labels2)
+                print(f"  Percent agreement: {pa*100:.2f}%")
+                try:
+                    kappa = llm_evaluation.AgreementMeasures.cohen_kappa(labels1, labels2)
+                    print(f"  Cohen's kappa: {kappa:.4f}")
+                except Exception as _:
+                    print("  Cohen's kappa unavailable.")
+            except Exception as e:
+                print(f"[WARN] Agreement measure failed: {e}")
+        else:
+            print("(Skipping agreement calculation)")
+
+        # Step 4: LLM Judge Evaluation (if user wants/has a judge function)
+        print("\nStep 4: (Optional) LLM Judge Evaluation")
+        print("---------------------------------------")
+        print("If you wish to run an LLM JUDGE function/class over your evaluation set, you may do so here (advanced).")
+        llmjudge_response = input("Run LLM Judge evaluation? [y/N]: ").strip().lower().startswith('y')
+        if llmjudge_response:
+            print("Provide a function (Python code) that takes (example, criteria) -> label. You may manually edit or implement it in src/evaluator.py>LLMJudgeEvaluation usage.")
+            # For simplicity, let user define a very simple inline judge in REPL, otherwise skip
+            user_code = input("Paste code for a labeling function? Leave blank to use a trivial judge that returns 5:").strip()
+            judge_schema_source = None
+            if not user_code:
+                def trivial_judge(example, criteria):
+                    return 5
+                judge_fn = trivial_judge
+            else:
+                import types
+                local_ctx = {}
+                try:
+                    exec(user_code, {}, local_ctx)
+                    judge_fn = None
+                    for k, v in local_ctx.items():
+                        if callable(v):
+                            judge_fn = v
+                            break
+                    if not judge_fn:
+                        print("[WARN] No function found in user code. Defaulting to 'always 5'.")
+                        judge_fn = lambda ex, cr: 5
+                    else:
+                        judge_schema_source = "user_repl_function"
+                except Exception as e:
+                    print(f"[WARN] Could not parse judge function: {e}. Using default.")
+                    judge_fn = lambda ex, cr: 5
+            llmjudge = llm_evaluation.LLMJudgeEvaluation(str(eval_out_path), judge_fn, judge_schema_source=judge_schema_source)
+            judge_results_path = llmjudge.run()
+            print(f"[INFO] LLM Judge evaluation complete: {judge_results_path}")
+        else:
+            print("(Skipping LLM Judge evaluation)")
+
+        print("\nEVALUATION SUITE COMPLETE!")
+        print("All outputs available under:")
+        print("  ", Path(eval_out_path).parent.absolute())
+
+        # Optionally, print location and instructions
+        print("\nNext steps:")
+        print("  - Edit evaluation_criteria.md to describe your rubric.")
+        print("  - Email outputs as instructed")
+
+        # No return needed; end of evaluation
+        return

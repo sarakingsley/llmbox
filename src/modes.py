@@ -60,6 +60,8 @@ from src.data_services import (
     TrainingDataLoader
 )
 
+from src import metrics as training_metrics
+
 class Modes:
 
     def __init__(self):

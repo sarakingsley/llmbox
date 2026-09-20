@@ -146,6 +146,12 @@ class TrainingConfig:
     eval_steps: int = 100
     output_dir: str = "./finetuned"
     merge_adapter: bool = False        # After PEFT training, also save an adapter-free merged copy
+    # Added for budget metrics:
+    token_budget: int = 1000000        # Total allowed tokens (settable)
+    # These fields are not used by training itself, but are used for reporting
+    # Inserted to accommodate budget/cost tracking and metric reporting.
+    report_metrics: bool = True
+
 
 @dataclass
 class DataConfig:
@@ -177,6 +183,30 @@ class ModeConfig:
     name: str = MISSING                # chat | generate | tool_calling | structured_output | train | finetune | prepare_data
 
 @dataclass
+class TrainingMetrics:
+    """Track and record metrics and resource use for a training job."""
+    # MLflow-logged scalar metrics
+    loss: Optional[float] = None
+    perplexity: Optional[float] = None
+    eval_loss: Optional[float] = None
+    eval_perplexity: Optional[float] = None
+    # Resource and cost metrics
+    start_time: Optional[float] = None
+    end_time: Optional[float] = None
+    elapsed_time: Optional[float] = None
+    max_memory_bytes: Optional[int] = None
+    avg_cpu_util_percent: Optional[float] = None
+    avg_gpu_util_percent: Optional[float] = None
+    flops_estimate: Optional[float] = None
+    carbon_kg_estimate: Optional[float] = None
+    tokens_processed: int = 0
+    token_budget: int = 0
+
+    @property
+    def tokens_remaining(self) -> int:
+        return (self.token_budget or 0) - (self.tokens_processed or 0)
+
+@dataclass
 class Config:
     model: ModelConfig = MISSING
     mode: ModeConfig = MISSING
@@ -194,6 +224,7 @@ class Config:
     system_prompt: str = "You are a helpful assistant."
     seed: int = 42
     output_dir: str = "outputs"        # chat session logs land under <output_dir>/chat_log
+    metrics: Optional[TrainingMetrics] = None
 
 def register_configs() -> None:
     """Register the schema so conf/config.yaml's `- config_schema` defaults

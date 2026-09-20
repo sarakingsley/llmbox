@@ -439,6 +439,10 @@ class Modes:
 
     def _run_training(self, cfg, allow_lora: bool) -> None:
         from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments
+        import inspect
+        import shutil
+        model_metrics_dir = Path("data/evaluations")
+        model_metrics_dir.mkdir(parents=True, exist_ok=True)
         if cfg.training.method == "lora" and not allow_lora:
             raise ValueError("mode=train does not support training.method=lora; use mode=finetune for LoRA.")
         device, dtype = self.generator._resolve_device_and_dtype(cfg)
@@ -516,6 +520,11 @@ class Modes:
             data_collator=collator, optimizers=(optimizer, None),
         )
         self.log.info("Starting %s (method=%s, optimizer=%s)...", cfg.mode.name, cfg.training.method, cfg.optimizer.name)
+
+        metrics_tracker = training_metrics.MetricsTracker(cfg)  # sk edited: sept. 20 2026 around 10:10 AM EST
+        if cfg.training.report_metrics:                         # sk edited: sept. 20 2026 around 10:10 AM EST
+            metrics_tracker.start()                             # sk edited: sept. 20 2026 around 10:10 AM EST
+
         trainer.train()
         trainer.save_model(cfg.training.output_dir)
         tokenizer.save_pretrained(cfg.training.output_dir)
@@ -526,6 +535,17 @@ class Modes:
             merged_model.save_pretrained(merged_dir)
             tokenizer.save_pretrained(merged_dir)
             self.log.info("Merged model saved to '%s'.", merged_dir)
+
+        # Write metrics as JSON (not MD) to /data/evaluation/.
+        if cfg.training.report_metrics:                                # sk edited: sept. 20 2026 around 10:10 AM EST
+            metrics_obj = metrics_tracker.stop(trainer)                # sk edited: sept. 20 2026 around 10:10 AM EST
+            # Only save JSON to /data/evaluation; do not write MD (to preserve legacy MD path).
+            metrics_file = model_metrics_dir / f"{cfg.mode.name}_{cfg.model.name}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}_metrics.json" # sk edited: sept. 20 2026 around 10:10 AM EST
+            # Save the grouped metrics dictionary to metrics.json                 # sk edited: sept. 20 2026 around 10:10 AM EST
+            metrics_file.write_text(json.dumps(metrics_obj.to_grouped_dict(), indent=2, ensure_ascii=False), encoding="utf-8") # sk edited: sept. 20 2026 around 10:10 AM EST
+            print(f"[info] Training metrics saved for analysis at {metrics_file}")  # sk edited: sept. 20 2026 around 10:10 AM EST
+         # The training_report.md is handled (unchanged) in the current output_dir by other pipelines if needed.
+         # No change to MD report in output_dir.
 
     def run_train(self, cfg) -> None:
         if not cfg.training.enabled:

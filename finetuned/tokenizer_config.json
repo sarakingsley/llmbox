@@ -1,13 +1,25 @@
 {
-  "add_prefix_space": false,
   "backend": "tokenizers",
-  "bos_token": "<|endoftext|>",
+  "boi_token": "<start_of_image>",
+  "bos_token": "<bos>",
   "clean_up_tokenization_spaces": false,
-  "eos_token": "<|endoftext|>",
+  "eoi_token": "<end_of_image>",
+  "eos_token": "<eos>",
+  "image_token": "<image_soft_token>",
   "is_local": true,
   "local_files_only": true,
-  "model_max_length": 131072,
-  "pad_token": "<|endoftext|>",
-  "tokenizer_class": "TokenizersBackend",
-  "unk_token": "<|endoftext|>"
+  "mask_token": "<mask>",
+  "model_max_length": 1000000000000000019884624838656,
+  "model_specific_special_tokens": {
+    "boi_token": "<start_of_image>",
+    "eoi_token": "<end_of_image>",
+    "image_token": "<image_soft_token>"
+  },
+  "pad_token": "<pad>",
+  "padding_side": "left",
+  "sp_model_kwargs": null,
+  "spaces_between_special_tokens": false,
+  "tokenizer_class": "GemmaTokenizer",
+  "unk_token": "<unk>",
+  "use_default_system_prompt": false
 }

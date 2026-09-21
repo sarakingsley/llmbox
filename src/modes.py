@@ -467,6 +467,89 @@ class Modes:
         model = AutoModelForCausalLM.from_pretrained(
             model_path, dtype=dtype, trust_remote_code=cfg.model.trust_remote_code, local_files_only=local_files_only,
         )
+        # VERY FLEXIBLE PEFT HANDLING TO MATCH TrainingConfig AND SCHEMA:
+        if hasattr(cfg.training, 'method') and cfg.training.method in {"lora", "adapters", "bitfit", "freeze", "prefix", "qlora"}:
+            if cfg.training.method == "lora":
+                try:
+                    from peft import LoraConfig, get_peft_model
+                except ImportError as e:
+                    raise RuntimeError("training.method=lora requires: pip install -U peft") from e
+                lora_config = LoraConfig(
+                    r=getattr(cfg.training, 'lora_r', 8),
+                    lora_alpha=getattr(cfg.training, 'lora_alpha', 16),
+                    lora_dropout=getattr(cfg.training, 'lora_dropout', 0.05),
+                    bias="none", task_type="CAUSAL_LM",
+                    target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+                )
+                model = get_peft_model(model, lora_config)
+                model.print_trainable_parameters()
+            elif cfg.training.method == "adapters":
+                try:
+                    from peft import AdapterConfig, get_peft_model
+                except ImportError as e:
+                    raise RuntimeError("training.method=adapters requires: pip install -U peft") from e
+                adapters_dim = getattr(cfg.training, 'adapters_dim', 64)
+                adapter_config = AdapterConfig(
+                    adapters_dim=adapters_dim, task_type="CAUSAL_LM"
+                )
+                model = get_peft_model(model, adapter_config)
+            elif cfg.training.method == "prefix":
+                try:
+                    from peft import PrefixTuningConfig, get_peft_model
+                except ImportError as e:
+                    raise RuntimeError("training.method=prefix requires: pip install -U peft") from e
+                prefix_length = getattr(cfg.training, 'prefix_length', 30)
+                prefix_config = PrefixTuningConfig(
+                    task_type="CAUSAL_LM", num_virtual_tokens=prefix_length
+                )
+                model = get_peft_model(model, prefix_config)
+            elif cfg.training.method == "bitfit":
+                try:
+                    from peft import BitFitConfig, get_peft_model
+                except ImportError as e:
+                    raise RuntimeError("training.method=bitfit requires: pip install -U peft") from e
+                bitfit_bias_params = getattr(cfg.training, 'bitfit_bias_params', [])
+                bitfit_config = BitFitConfig(task_type="CAUSAL_LM", bias=bitfit_bias_params or "all")
+                model = get_peft_model(model, bitfit_config)
+            elif cfg.training.method == "freeze":
+                freeze_modules = getattr(cfg.training, 'freeze_modules', [])
+                for name, param in model.named_parameters():
+                    if any(module in name for module in freeze_modules):
+                        param.requires_grad = False
+            elif cfg.training.method == "qlora":
+                try:
+                    from peft import LoraConfig, get_peft_model
+                except ImportError as e:
+                    raise RuntimeError("training.method=qlora requires: pip install -U peft") from e
+                # qlora-specific settings: use lora, but user is assumed to set quantization elsewhere
+                lora_config = LoraConfig(
+                    r=getattr(cfg.training, 'lora_r', 8),
+                    lora_alpha=getattr(cfg.training, 'lora_alpha', 16),
+                    lora_dropout=getattr(cfg.training, 'lora_dropout', 0.05),
+                    bias="none", task_type="CAUSAL_LM",
+                    target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+                )
+                model = get_peft_model(model, lora_config)
+                model.print_trainable_parameters()
+            else:
+                pass  # Default: do nothing (full fine-tune)
+
+        '''  SK EDITED: September 21, 2026 around 7:54 AM EST
+        if cfg.training.method == "lora" and not allow_lora:
+            raise ValueError("mode=train does not support training.method=lora; use mode=finetune for LoRA.")
+        device, dtype = self.generator._resolve_device_and_dtype(cfg)
+        model_path, local_files_only = self.generator._resolve_model_path(cfg)
+        self.log.info("Loading '%s' (source=%s, %s) for training...", cfg.model.name, cfg.model.source, model_path)
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, trust_remote_code=cfg.model.trust_remote_code, local_files_only=local_files_only
+        )
+        if tokenizer.pad_token_id is None:
+            tokenizer.pad_token = tokenizer.eos_token
+        if cfg.model.trust_remote_code:
+            self.generator._ensure_remote_code_compat()
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path, dtype=dtype, trust_remote_code=cfg.model.trust_remote_code, local_files_only=local_files_only,
+        )
         if cfg.training.method == "lora":
             try:
                 from peft import LoraConfig, get_peft_model
@@ -479,6 +562,8 @@ class Modes:
             )
             model = get_peft_model(model, lora_config)
             model.print_trainable_parameters()
+        '''
+
         model.to(device)
         self.dataloader = self._make_dataloader(cfg)                    # sk edited: sept. 19 2026 around 7:18 PM EST
         conversations = self.dataloader._load_conversations(cfg)

@@ -35,24 +35,44 @@ Prohibited uses of LLMBox include but are not limited to the following:
 ```
 LLMBOX_APP/
 │
-├──startllm.py      # run this in terminal to start the LLM 
-├──modes.py 
-├──schema.py
-├──structure.py    # creates pydantic models
+├──README.md
+├──LICENSE  
+├──startllm.py                     # run this in terminal to start the LLM 
+├──structure.py                    # creates pydantic models
+├──transform_original_dataset.py   # hint: you may use this to transform your dataset into a format accepted by LLMBOX
+├──__init__.py
 │
-├──configurator/   # application configuration manager
-│    ├── main.py
-│    ├── config.py
-│    ├── rules.py
-│    ├── options.py
-│    └── output.py
+├──about/
+│     ├── quickstart.md
+      ├── LLMBOX_API/               # LLMBOX API DOCUMENTATION
+│     └── university_students.md    # forthcoming
+│
+├──config/   # application configuration manager
+│    ├── data/
+│    ├── mode/
+│    ├── model/
+│    ├── optimizer/
+│    └── config.yaml
+│ 
+├──demos/  
+│ 
+├──finetuned/  
+│ 
+├──outputs/
+│     ├── config_logs/    
+│     ├── chat_logs/           # note: you can create training data 
+│     ├── test.jsonl                   with the chatlogs.
+│     └── train.jsonl
 │ 
 ├──src/             # main application software directory
-│    ├── main.py
-│    ├── config.py
-│    ├── rules.py
-│    ├── options.py
-│    ├──  output.py
+│    ├── __init__.py
+│    ├── datasets.py
+│    ├── generation.py
+│    ├── modes.py
+│    ├── schema.py
+│    ├── sys_logger.py
+│    ├── tools.py
+│    ├──   downloader.py   # use to add LLM models to application
 │    └──pydantic_models/
 │          ├── personrecords.py
 │          └── dogbreeds.py
@@ -68,15 +88,19 @@ LLMBOX_APP/
 │        └── meta/
 │            └── llama-3-1-instruct/
 │
-└──data/
-     ├──output/
-     │     ├── config_logs/    
-     │     ├── chat_logs/           # note: you can create training data 
-     │     ├── sys_logs/                    with the chatlogs.
-     │     └── experiment_logs/
-     │ 
-     │
-     └──YOUR_DATA/ #place your DATASET in a subdirectory within the data dir.
+└──data/  
+      ├──demos/
+      │
+      ├──evaluations/                 # automatically created by LLMBOX
+      │
+      ├──pydantic_models/             # you need to create these by running relevant LLMBOX modules AFTER defining a Pydantic model in python
+      │
+      ├──traindata/                   # automatically created by LLMBOX
+      │
+      ├──transformed_datasets/        # folder Prof. Kingsley made. Feel free to put your transformed original dataset here or elsewhere. 
+      │
+      │ ### OPTIONAL:
+      └──YOUR_DATA/ #place your DATASET in a subdirectory within the data dir.
             ├── original_dataset.json 
             └── dataset_splits/            
                    ├── train_dataset.json  ## split your dataset into train

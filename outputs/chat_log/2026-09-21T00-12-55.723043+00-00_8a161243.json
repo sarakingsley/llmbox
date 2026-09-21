@@ -1,0 +1,119 @@
+{
+  "session": {
+    "session_id": "8a161243",
+    "started_at": "2026-09-21T00:12:55.723043+00:00",
+    "model": {
+      "name": "phi4_instruct",
+      "source": "local",
+      "model_id": "microsoft/Phi-4-mini-instruct",
+      "local_path": "/Users/skingsle/Documents/llmbox/models/llms/microsoft/phi-4-mini-instruct",
+      "architecture": "phi3",
+      "dtype": "bfloat16",
+      "device": "auto",
+      "trust_remote_code": false,
+      "supports_tool_calling": true,
+      "supports_structured_output": true,
+      "tool_calling_format": "functools_prompt",
+      "chat_template_kwargs": {},
+      "assistant_mask_strategy": "verified_prefix",
+      "add_prefix": null,
+      "add_suffix": null,
+      "add_specialtokens": []
+    },
+    "generation": {
+      "max_new_tokens": 512,
+      "temperature": 1.0,
+      "top_p": 0.95,
+      "top_k": 64,
+      "do_sample": true,
+      "repetition_penalty": 1.0
+    },
+    "system_prompt": "You are a helpful assistant."
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "user": {
+        "username": "user",
+        "content": "hello, good evening! What is your name?",
+        "timestamp": "2026-09-21T00:21:29.779965+00:00"
+      },
+      "assistant": {
+        "content": "Good evening! I am Phi developed by Microsoft. How may I help you today?",
+        "timestamp": "2026-09-21T00:21:29.779981+00:00"
+      }
+    },
+    {
+      "turn": 2,
+      "user": {
+        "username": "user",
+        "content": "How were you designed?",
+        "timestamp": "2026-09-21T00:21:44.398735+00:00"
+      },
+      "assistant": {
+        "content": "Hello! I'm Phi, created by Microsoft. I was developed through an integration of Microsoft technologies with Microsoft's vast experience in AI research and development. My architecture combines advanced machine learning techniques, natural language processing, and access to Microsoft cloud services,rë to provide valuable assistance to users across a variety of tasks and inquiries.",
+        "timestamp": "2026-09-21T00:21:44.398744+00:00"
+      }
+    },
+    {
+      "turn": 3,
+      "user": {
+        "username": "user",
+        "content": "how do I say hello in Spanish?",
+        "timestamp": "2026-09-21T00:22:15.175413+00:00"
+      },
+      "assistant": {
+        "content": "hr terror en español: \"hola\"\n\nEn inglés: \"hello\"",
+        "timestamp": "2026-09-21T00:22:15.175428+00:00"
+      }
+    },
+    {
+      "turn": 4,
+      "user": {
+        "username": "user",
+        "content": "how do say hello in German?",
+        "timestamp": "2026-09-21T00:22:59.208035+00:00"
+      },
+      "assistant": {
+        "content": "In German, you say \"hello\" as \"hallo.\"",
+        "timestamp": "2026-09-21T00:22:59.208044+00:00"
+      }
+    },
+    {
+      "turn": 5,
+      "user": {
+        "username": "user",
+        "content": "how do you say hello in Hindi?",
+        "timestamp": "2026-09-21T00:23:10.894892+00:00"
+      },
+      "assistant": {
+        "content": "In Hindi, you say \"hello\" as \"नमस्ते\" (namaste).",
+        "timestamp": "2026-09-21T00:23:10.894902+00:00"
+      }
+    },
+    {
+      "turn": 6,
+      "user": {
+        "username": "user",
+        "content": "How do you say hello in Chinese?",
+        "timestamp": "2026-09-21T00:23:21.486143+00:00"
+      },
+      "assistant": {
+        "content": "In Chinese, you say \"hello\" as \"你好\" (nǐ hǎo). The pinyin (Romanization) is \"Nǐ hǎo,\" where \"你\" means \"you\" and \"好\" means \"good\" or \"well.\"",
+        "timestamp": "2026-09-21T00:23:21.486150+00:00"
+      }
+    },
+    {
+      "turn": 7,
+      "user": {
+        "username": "user",
+        "content": "How do you say hello in Arabic?",
+        "timestamp": "2026-09-21T00:23:32.283235+00:00"
+      },
+      "assistant": {
+        "content": "In Arabic, you can say \"hello\" as \"مرحبا\" (marhaba). It is also common to պետական \"سلام\" (as-salamu alaykum), which can be translated to \"peace be upon you,\" and it is a polite greeting when used. When replying, the other person typically responds with \"wa rahmatullah\" (waa raahmathu-l-lah), which means \"and peace be upon him/her.\"",
+        "timestamp": "2026-09-21T00:23:32.283245+00:00"
+      }
+    }
+  ]
+}

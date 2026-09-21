@@ -1,0 +1,119 @@
+{
+  "session": {
+    "session_id": "7ce1df5b",
+    "started_at": "2026-09-21T00:29:43.518246+00:00",
+    "model": {
+      "name": "gemma3_270m_it",
+      "source": "local",
+      "model_id": "google/gemma-3-270m-it",
+      "local_path": "/Users/skingsle/Documents/llmbox/models/llms/google/gemma-3-270m-it",
+      "architecture": "gemma3_text",
+      "dtype": "bfloat16",
+      "device": "auto",
+      "trust_remote_code": false,
+      "supports_tool_calling": false,
+      "supports_structured_output": true,
+      "tool_calling_format": "generic",
+      "chat_template_kwargs": {},
+      "assistant_mask_strategy": "verified_prefix",
+      "add_prefix": null,
+      "add_suffix": null,
+      "add_specialtokens": []
+    },
+    "generation": {
+      "max_new_tokens": 512,
+      "temperature": 1.0,
+      "top_p": 0.95,
+      "top_k": 64,
+      "do_sample": true,
+      "repetition_penalty": 1.0
+    },
+    "system_prompt": "You are a helpful assistant."
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "user": {
+        "username": "user",
+        "content": "Good evening, what is your name?",
+        "timestamp": "2026-09-21T00:30:20.772828+00:00"
+      },
+      "assistant": {
+        "content": "Hello! I am Gemma, an open-weights AI assistant. I am a large language model created by the Gemma team.",
+        "timestamp": "2026-09-21T00:30:20.772846+00:00"
+      }
+    },
+    {
+      "turn": 2,
+      "user": {
+        "username": "user",
+        "content": "How were you created?",
+        "timestamp": "2026-09-21T00:30:35.668459+00:00"
+      },
+      "assistant": {
+        "content": "I was created by the Gemma team.",
+        "timestamp": "2026-09-21T00:30:35.668466+00:00"
+      }
+    },
+    {
+      "turn": 3,
+      "user": {
+        "username": "user",
+        "content": "How do you say hello in Spanish?",
+        "timestamp": "2026-09-21T00:30:52.738295+00:00"
+      },
+      "assistant": {
+        "content": "You can say \"Hola\" in Spanish.",
+        "timestamp": "2026-09-21T00:30:52.738308+00:00"
+      }
+    },
+    {
+      "turn": 4,
+      "user": {
+        "username": "user",
+        "content": "How do you say hello in German?",
+        "timestamp": "2026-09-21T00:31:02.050432+00:00"
+      },
+      "assistant": {
+        "content": "You can say \"Hola\" in German.",
+        "timestamp": "2026-09-21T00:31:02.050440+00:00"
+      }
+    },
+    {
+      "turn": 5,
+      "user": {
+        "username": "user",
+        "content": "How do you say hello in Hindi?",
+        "timestamp": "2026-09-21T00:31:14.958443+00:00"
+      },
+      "assistant": {
+        "content": "You can say \"Hello\"റുണ്ട് in Hindi.",
+        "timestamp": "2026-09-21T00:31:14.958452+00:00"
+      }
+    },
+    {
+      "turn": 6,
+      "user": {
+        "username": "user",
+        "content": "How do you say hello in Chinese?",
+        "timestamp": "2026-09-21T00:31:23.521777+00:00"
+      },
+      "assistant": {
+        "content": "You can say \"Hello\" in Chinese.",
+        "timestamp": "2026-09-21T00:31:23.521786+00:00"
+      }
+    },
+    {
+      "turn": 7,
+      "user": {
+        "username": "user",
+        "content": "How do you say hello in Arabic?",
+        "timestamp": "2026-09-21T00:31:31.216864+00:00"
+      },
+      "assistant": {
+        "content": "You can say \"Hello\" in Arabic.",
+        "timestamp": "2026-09-21T00:31:31.216872+00:00"
+      }
+    }
+  ]
+}

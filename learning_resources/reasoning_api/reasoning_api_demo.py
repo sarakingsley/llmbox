@@ -1,7 +1,7 @@
 import os
 import sys
 import json
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, List
 from typing import Optional, Literal, Any, List
 
 class Step(BaseModel):

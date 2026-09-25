@@ -209,10 +209,10 @@ class DataTransformer:
         self,
         dataset: Iterable[Mapping[str, Any]],
         *,
-        text_columns: str | Sequence[str] | None = None,
-        target_columns: str | Sequence[str] | None = None,
-        instruction: str = "",
-        label_maps: Mapping[str, Mapping[Any, Any]] | None = None,
+        text_columns: str | Sequence[str] | None = None,   # text_columns: these should be the data representing the user question, prompt or input context used for the AI Assistant prediction.
+        target_columns: str | Sequence[str] | None = None, # target_columns: these should be the data representing the AI assistant `response` or `completion`.
+        instruction: str = "",                             # instructions (optional): this describes the task an LLM will either trained or ask to perform on the dataset or a similar dataset.
+        label_maps: Mapping[str, Mapping[Any, Any]] | None = None,  # label_maps (optional): this parameter allows you to apply a text label to a feature in your dataset that has a numeric value. For example, if the column_values are either 1 or 0, you could specify that 1 = "acceptable" and 0 = "unacceptable".
     ) -> Iterator[dict[str, Any]]:
         """
         Convert rows into prompt/completion/text/messages examples.
@@ -479,11 +479,11 @@ class DataTransformer:
 
     @staticmethod
     def split_and_save_jsonl(
-        examples: Iterable[Mapping[str, Any]],
-        output_directory: str | Path,
+        examples: Iterable[Mapping[str, Any]],  # these should be from your transformed dataset, e.g. the dataset produced by the function standardize_llm_dataset
+        output_directory: str | Path,           # the path where you want your train and test sets saved
         *,
-        train_fraction: float = 0.8,
-        seed: int = 42,
+        train_fraction: float = 0.8,            # use this parameter to specify what percentage of your whole dataset should go into the train vs. test set
+        seed: int = 42,                         # this is a random number used to make the process reproducible. Note: the number isn't truly random. What does it do? It makes sure the same sequence of numbers is produced by the iterator. The seed establishes a number the number generator uses at the start of the sequence, e.g. the number is used to generate the next number in the sequence
         overwrite: bool = True,
     ) -> dict[str, Any]:
         """

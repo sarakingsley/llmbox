@@ -1,0 +1,6 @@
+- mode=tool_calling
+- tool_calling.enabled=true
+- model=phi4_instruct
+- model.source=local
+- model.local_path=/Users/skingsle/Documents/llmbox/models/llms/microsoft/phi-4-mini-instruct
+- prompt=tell me about the tool I am calling

@@ -1,0 +1,6 @@
+- model=phi4_instruct
+- mode=tool_calling
+- tool_calling=weather
+- prompt=What is the weather in Tokyo?
+- model.source=local
+- model.local_path=/Users/skingsle/Documents/llmbox/models/llms/microsoft/phi-4-mini-instruct

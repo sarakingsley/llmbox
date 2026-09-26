@@ -5,7 +5,6 @@ defaults:
   - data: chat_log
   - optimizer: adamw
   - tool_calling: null
-  #- config_schema
   - _self_
 
 seed: 42

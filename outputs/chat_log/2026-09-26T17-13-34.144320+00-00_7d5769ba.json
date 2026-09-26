@@ -1,0 +1,59 @@
+{
+  "session": {
+    "session_id": "7d5769ba",
+    "started_at": "2026-09-26T17:13:34.144320+00:00",
+    "model": {
+      "name": "phi4_instruct",
+      "source": "local",
+      "model_id": "microsoft/Phi-4-mini-instruct",
+      "local_path": "/Users/skingsle/Documents/llmbox/models/llms/microsoft/phi-4-mini-instruct",
+      "architecture": "phi3",
+      "dtype": "bfloat16",
+      "device": "auto",
+      "trust_remote_code": false,
+      "supports_tool_calling": true,
+      "supports_structured_output": true,
+      "tool_calling_format": "generic",
+      "chat_template_kwargs": {},
+      "assistant_mask_strategy": "verified_prefix",
+      "add_prefix": null,
+      "add_suffix": null,
+      "add_specialtokens": []
+    },
+    "generation": {
+      "max_new_tokens": 512,
+      "temperature": 1.0,
+      "top_p": 0.95,
+      "top_k": 64,
+      "do_sample": true,
+      "repetition_penalty": 1.0
+    },
+    "system_prompt": "You are a helpful assistant."
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "user": {
+        "username": "user",
+        "content": "hello",
+        "timestamp": "2026-09-26T17:13:42.451771+00:00"
+      },
+      "assistant": {
+        "content": "Hello! How can I assist you today?",
+        "timestamp": "2026-09-26T17:13:42.451781+00:00"
+      }
+    },
+    {
+      "turn": 2,
+      "user": {
+        "username": "user",
+        "content": "i need ideas for making friends in pittsburgh",
+        "timestamp": "2026-09-26T17:14:14.926552+00:00"
+      },
+      "assistant": {
+        "content": "Making friends in a new place like Pittsburgh can be a rewarding experience. Here are some ideas to help you connect with people in the city:\n\n1. **Join Local Meetups עט:**\n   - Websites like Meetup.com have groups for a variety of interests, from hiking and arts to board games and book clubs. Check out the Pittsburgh section and find a group that matches your interestsenario.\n\n2. **Visit Local Parks and Trails:**\n   - Pittsburgh has beautiful parks like Schenley Park and trails like the Great Allegheny Passage (GAP). These are great places to meet people who enjoy outdoor activities.\n\n3. **Attend Cultural Events:**\n   - Pittsburgh is rich in culture, and you can attend local festivals, art exhibits, concerts, and theater performances. These events often attract a diverse group of people and can be a great place to meet new friends.\n\n4. **Volunteer:**\n   - Volunteering is a great way to meet people who care about the same causes as you do. Organizations such as Pittsburgh Animal Shelter, Pittsburgh Botanical Garden, or local food banks often seek volunteers.\n\n5. **Take a Class:**\n   - Whether it's a cooking class, dance, language, or art class, learning something new can help you meet people with similar interests. The Pittsburgh Public Library and community centers often offer various classes.\n\n6. **Visit Cafes and Bookstores:**\n   - Places like City View Coffee on Pittsburgh's East Side or Barnes & Noble at the East Liberty branch are great spots to meet people. Joining a café meetup group can also help you make friends who share your interest in coffee.\n\n7. **Join Professional Groups:**\n   - If you're working or looking for work, joining professional groups related to your field can connect you with like-minded individuals. LinkedIn groups can also be a good platform to meet people in your industry.\n\n8. **Sports Leagues:**\n   - If you enjoy sports, consider joining a league. Pittsburgh has a variety of sports leagues, from soccer to hockey. This is a great way to get active and meet people.\n\n9. **Pittsburgh Ambassadors:**\n   - If you're not from Pittsburgh, you might want to learn the city's ins and outs by joining the Pittsburgh Ambassadors program. Volunteers gain insider knowledge and are welcomed by the community, making it easier to meet locals.\n\n10. **Neighborhood Gatherings:**\n    - Some neighborhoods in Pittsburgh hold regular gatherings, potlucks, or neighborhood tours. Getting involved in your local neighborhood community can lead to",
+        "timestamp": "2026-09-26T17:14:14.927012+00:00"
+      }
+    }
+  ]
+}

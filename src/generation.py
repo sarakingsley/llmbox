@@ -125,6 +125,70 @@ class GenerationManager:
     def _generate_once(self, model, tokenizer, device, messages, cfg, **template_kwargs):
         import torch
 
+        chat_template_kwargs = OmegaConf.to_container(cfg.model.chat_template_kwargs, resolve=True)
+        template_kwargs = {**chat_template_kwargs, **template_kwargs}
+
+        # Distinguish between models that expect 'tools'/'tool_choice' as kwarg in chat template (generic)
+        # and those that must have the full tool def embedded in prompt, e.g. phi-4-mini-instruct ('functools_prompt').
+        apply_kwargs = {
+            'conversation': messages if cfg.model.tool_calling_format == 'functools_prompt' else None,
+            'messages': messages if cfg.model.tool_calling_format != 'functools_prompt' else None,
+            #'conversation': messages,
+            #'messages': messages,     #SK EDITED: sept. 26 2026 around 1:08 PM EST
+            'tokenize': True,
+            'return_dict': True,
+            'return_tensors': "pt",
+            'add_generation_prompt': True
+        }
+        apply_kwargs.update(template_kwargs)
+        # Only one of conversation/messages should be set
+        if cfg.model.tool_calling_format == 'functools_prompt':
+            if 'messages' in apply_kwargs:
+                apply_kwargs.pop('messages', None)
+            # Don't pass tools/tool_choice as template kwargs to phi4-mini
+            apply_kwargs.pop('tools', None)
+            apply_kwargs.pop('tool_choice', None)
+        else:
+            if 'conversation' in apply_kwargs:
+                apply_kwargs.pop('conversation', None)
+            # For generic, may need to pass tools/tool_choice if provided
+            pass
+
+        # Some models will crash if you pass tools= in chat_template when their template doesn't support it
+        if 'tools' in apply_kwargs and cfg.model.tool_calling_format != 'generic':
+            apply_kwargs.pop('tools')
+        if 'tool_choice' in apply_kwargs and cfg.model.tool_calling_format != 'generic':
+            apply_kwargs.pop('tool_choice')
+
+        # Remove None keys (important if not compatible with chat template)
+        for k in [k for k in apply_kwargs if apply_kwargs[k] is None]:
+            del apply_kwargs[k]
+
+        # apply_chat_template returns either dict w/ "input_ids" or tensor   # SK EDITED: sept. 26 2026 around 5:34 PM EST
+        '''
+        inputs = tokenizer.apply_chat_template(**apply_kwargs)
+        if isinstance(inputs, dict):
+            input_ids = inputs["input_ids"].to(device)
+            input_len = input_ids.shape[-1]
+        else:
+            input_ids = inputs.to(device)
+            input_len = input_ids.shape[-1]
+        with torch.no_grad():
+            output_ids = model.generate(
+                input_ids=input_ids,
+                **self._generation_kwargs(cfg, tokenizer)
+            )
+         '''
+        inputs = tokenizer.apply_chat_template(**apply_kwargs).to(device)      # SK EDITED: sept. 26 2026 around 5:34 PM EST
+        input_len = inputs["input_ids"].shape[-1]                              # SK EDITED: sept. 26 2026 around 5:34 PM EST
+        with torch.no_grad():                                                  # SK EDITED: sept. 26 2026 around 5:34 PM EST
+            output_ids = model.generate(**inputs, **self._generation_kwargs(cfg, tokenizer)) # SK EDITED: sept. 26 2026 around 5:34 PM EST
+        return tokenizer.decode(output_ids[0][input_len:], skip_special_tokens=True).strip()
+
+    ''' SK EDITED: sept. 26 2026 around 12: 45 PM EST
+    def _generate_once(self, model, tokenizer, device, messages, cfg, **template_kwargs):
+        import torch
+
         template_kwargs = {**OmegaConf.to_container(cfg.model.chat_template_kwargs, resolve=True), **template_kwargs}
         inputs = tokenizer.apply_chat_template(
             messages,
@@ -140,6 +204,7 @@ class GenerationManager:
             output_ids = model.generate(**inputs, **self._generation_kwargs(cfg, tokenizer))
 
         return tokenizer.decode(output_ids[0][input_len:], skip_special_tokens=True).strip()
+        '''
 
     def _resolve_prompt(self, cfg) -> str:
         if cfg.prompt_file:
@@ -196,6 +261,11 @@ class GenerationManager:
             return None
         json_str = text[idx + len(marker):].strip()
         try:
+            # SK EDITED: sept. 26 2026 around 12: 45 PM EST
+            # Accept both JSON list and object for single tool call
+            # Robustness: allow initial = sign, e.g. 'functools=[...]', due to some models generating that way
+            if json_str.startswith("="):
+                json_str = json_str[1:].lstrip()
             calls, _ = json.JSONDecoder().raw_decode(json_str)
             return calls
         except json.JSONDecodeError:
@@ -222,13 +292,17 @@ class GenerationManager:
         """
         import re
 
-        raw_calls = []
-        tag_blocks = re.findall(r"<tool_call>(.*?)</tool_call>", text, re.DOTALL)
-        for block in tag_blocks:
-            try:
-                raw_calls.append(json.loads(block.strip()))
-            except json.JSONDecodeError:
-                continue
+        functools_calls = self.parse_tool_calls(text)
+        if functools_calls is not None:
+            raw_calls = functools_calls if isinstance(functools_calls, list) else [functools_calls]
+        else:
+            raw_calls = []
+            tag_blocks = re.findall(r"<tool_call>(.*?)</tool_call>", text, re.DOTALL)
+            for block in tag_blocks:
+                try:
+                    raw_calls.append(json.loads(block.strip()))
+                except json.JSONDecodeError:
+                    continue
 
         if not raw_calls:
             stripped = text.strip()
@@ -337,6 +411,18 @@ class GenerationManager:
         whose tool calls actually got executed. `messages` is mutated in
         place. Returns (final_text, tool_call_records)."""
         regen_kwargs = {"tools": tools, "tool_choice": tool_choice}
+        # For phi4-mini-instruct we must use functools_prompt (passed system prompt with <|tool|...>)
+        if cfg.model.tool_calling_format == "functools_prompt":                                         # SK EDITED: sept. 26 2026 around 5:36 PM EST
+            # In this mode, tools and tool_choice ignored, tool JSON is in system prompt!               # SK EDITED: sept. 26 2026 around 5:36 PM EST
+            raw_response = self._generate_once(model, tokenizer, device, messages, cfg)                 # SK EDITED: sept. 26 2026 around 5:36 PM EST
+            tool_calls = self.parse_tool_calls(raw_response)                                            # SK EDITED: sept. 26 2026 around 5:36 PM EST
+            if not tool_calls:                                                                          # SK EDITED: sept. 26 2026 around 5:36 PM EST
+                messages.append({"role": "assistant", "content": raw_response})                         # SK EDITED: sept. 26 2026 around 5:36 PM EST
+                return raw_response, []                                                                 # SK EDITED: sept. 26 2026 around 5:36 PM EST
+            return self._dispatch_tool_calls_and_continue(                                              # SK EDITED: sept. 26 2026 around 5:36 PM EST
+                raw_response, tool_calls, model, tokenizer, device, messages, cfg, {}                   # SK EDITED: sept. 26 2026 around 5:36 PM EST
+            )                                                                                           # SK EDITED: sept. 26 2026 around 5:36 PM EST
+        # Generic (structured template, passes tools/tool_choice)
         raw_response = self._generate_once(model, tokenizer, device, messages, cfg, **regen_kwargs)
         tool_calls = self.parse_generic_tool_calls(raw_response)
         if not tool_calls:

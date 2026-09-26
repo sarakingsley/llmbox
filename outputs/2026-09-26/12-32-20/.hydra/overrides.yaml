@@ -1,0 +1,6 @@
+- model=gemma3_270m
+- mode=tool_calling
+- tool_calling=weather
+- prompt=What is the weather in New York?
+- model.source=local
+- model.local_path=/Users/skingsle/Documents/llmbox/models/llms/google/gemma-3-270m-it

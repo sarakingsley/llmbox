@@ -161,12 +161,14 @@ class Modes:
             )
         model, tokenizer, device = self.generator._load_model_and_tokenizer(cfg)
         prompt = self.generator._resolve_prompt(cfg)
+
         tools = OmegaConf.to_container(cfg.tool_calling.tools, resolve=True)
+
         if cfg.model.tool_calling_format == "functools_prompt":
             system_content = self.generator.build_functools_system_prompt(cfg.system_prompt, tools)
             messages = [{"role": "system", "content": system_content}]
             messages.append({"role": "user", "content": prompt})
-            answer, tool_call_records = self.generator.run_generatic_tool_turn(
+            answer, tool_call_records = self.generator.run_generic_tool_turn(
                 model, tokenizer, device, messages, cfg, tools, cfg.tool_calling.tool_choice, # sk edited: sept. 26 around 11:30 AM EST
             )
             #answer, tool_call_records = self.generator.run_tool_turn(model, tokenizer, device, messages, cfg)  # sk edited: sept. 26 around 11:30 AM EST

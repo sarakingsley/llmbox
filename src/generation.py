@@ -201,21 +201,68 @@ class GenerationManager:
         except json.JSONDecodeError:
             return None
 
-    def run_tool_turn(self, model, tokenizer, device, messages, cfg):
-        """Generate one assistant turn under the functools_prompt convention:
-        if the model requests tool call(s), execute them locally against
-        src.tools.TOOL_REGISTRY, feed the results back in, and generate the
-        final answer. `messages` is mutated in place with the raw response
-        and any tool result, same as run_turn did in chat_phi4mini.py.
-        Returns (final_text, tool_call_records)."""
-        from src.tools import TOOL_REGISTRY
+    def parse_generic_tool_calls(self, text: str):
+        """Best-effort parse of a tool-call response for the "generic"
+        tool_calling_format, where tool defs are passed to
+        apply_chat_template via a `tools=` kwarg and the model's own chat
+        template decides how to render a requested call. There's no single
+        standard for that rendering, so this tries the conventions used by
+        most current open tool-calling models, in order:
 
-        raw_response = self._generate_once(model, tokenizer, device, messages, cfg)
-        tool_call_records = []
+            1. One or more <tool_call>...</tool_call> blocks (Qwen2.5/Hermes
+                style), each wrapping a JSON object.
+            2. A bare JSON object or list of objects whose only content is the
+                call itself (Llama 3.x style), e.g. {"name": ..., "parameters":
+                {...}}.
 
-        tool_calls = self.parse_tool_calls(raw_response)
-        if tool_calls:
+        Accepts either "arguments" (OpenAI/Hermes-style) or "parameters"
+        (Llama-style) as the arguments key and normalizes to "arguments".
+        Returns None if the text doesn't look like a tool call at all --
+        callers should then treat it as a normal, final answer.
+        """
+        import re
+
+        raw_calls = []
+        tag_blocks = re.findall(r"<tool_call>(.*?)</tool_call>", text, re.DOTALL)
+        for block in tag_blocks:
+            try:
+                raw_calls.append(json.loads(block.strip()))
+            except json.JSONDecodeError:
+                continue
+
+        if not raw_calls:
+            stripped = text.strip()
+            # Only consider this a tool call if the *entire* reply is JSON --
+            # a normal answer that merely contains some JSON shouldn't be
+            # misread as a function call.
+            if stripped.startswith("{") or stripped.startswith("["):
+                try:
+                    parsed = json.loads(stripped)
+                except json.JSONDecodeError:
+                    return None
+                raw_calls = parsed if isinstance(parsed, list) else [parsed]
+
+        if not raw_calls:
+            return None
+
+        normalized = []
+        for call in raw_calls:
+            if not isinstance(call, dict) or "name" not in call:
+                return None  # doesn't actually look like a tool call
+            arguments = call.get("arguments", call.get("parameters", {}))
+            normalized.append({"name": call["name"], "arguments": arguments})
+        return normalized
+
+    def _dispatch_tool_calls_and_continue(self, raw_response, tool_calls, model, tokenizer, device, messages, cfg, regen_kwargs):
+            """Shared by both tool-calling conventions: execute parsed
+            tool_calls against src.tools.TOOL_REGISTRY, append the assistant
+            turn and tool results to `messages`, and generate the follow-up
+            answer with the tool results in context. Returns (final_text,
+            tool_call_records)."""
+            from src.tools import TOOL_REGISTRY
+
             results = []
+            tool_call_records = []
             for call in tool_calls:
                 name = call.get("name")
                 arguments = call.get("arguments", {})
@@ -233,7 +280,68 @@ class GenerationManager:
             messages.append({"role": "assistant", "content": raw_response})
             messages.append({"role": "tool", "content": json.dumps(results)})
 
-            raw_response = self._generate_once(model, tokenizer, device, messages, cfg)
+            final_text = self._generate_once(model, tokenizer, device, messages, cfg, **regen_kwargs)
+            messages.append({"role": "assistant", "content": final_text})
+            return final_text, tool_call_records
 
-        messages.append({"role": "assistant", "content": raw_response})
-        return raw_response, tool_call_records
+    def run_tool_turn(self, model, tokenizer, device, messages, cfg):
+        """Generate one assistant turn under the functools_prompt convention:
+        if the model requests tool call(s), execute them locally against
+        src.tools.TOOL_REGISTRY, feed the results back in, and generate the
+        final answer. `messages` is mutated in place with the raw response
+        and any tool result, same as run_turn did in chat_phi4mini.py.
+        Returns (final_text, tool_call_records)."""
+        #from src.tools import TOOL_REGISTRY                                   # SK EDITED: Sept. 26 2026 around 11:46 PM EST
+        raw_response = self._generate_once(model, tokenizer, device, messages, cfg)
+        #tool_call_records = []                                                # SK EDITED: Sept. 26 2026 around 11:46 PM EST
+        tool_calls = self.parse_tool_calls(raw_response)
+        if not tool_calls:                                                     # SK EDITED: Sept. 26 2026 around 11:46 PM EST
+            messages.append({"role": "assistant", "content": raw_response})    # SK EDITED: Sept. 26 2026 around 11:46 PM EST
+            return raw_response, []                                            # SK EDITED: Sept. 26 2026 around 11:46 PM EST
+            #else:
+        else: return self._dispatch_tool_calls_and_continue(
+            raw_response, tool_calls, model, tokenizer, device, messages, cfg, {}
+        )
+
+        '''                                                                    # SK EDITED: Sept. 26 2026 around 11:46 PM EST
+        if tool_calls:
+            results = []
+            for call in tool_calls:
+                name = call.get("name")
+                arguments = call.get("arguments", {})
+                func = TOOL_REGISTRY.get(name)
+                if func is None:
+                    result = {"error": f"Unknown tool '{name}'"}
+                else:
+                    try:
+                        result = func(**arguments)
+                    except Exception as exc:  # noqa: BLE001 - surface bad args to the model
+                        result = {"error": str(exc)}
+                results.append({"name": name, "result": result})
+                tool_call_records.append({"name": name, "arguments": arguments, "result": result})
+            messages.append({"role": "assistant", "content": raw_response})
+            messages.append({"role": "tool", "content": json.dumps(results)})
+            raw_response = self._generate_once(model, tokenizer, device, messages, cfg)
+        '''
+        #messages.append({"role": "assistant", "content": raw_response})
+        #return raw_response, tool_call_records
+
+    def run_generic_tool_turn(self, model, tokenizer, device, messages, cfg, tools, tool_choice):
+        """Generate one assistant turn under the "generic" tool_calling
+        convention (the default): tool defs are passed to
+        apply_chat_template via `tools=`. If the model's reply parses as a
+        tool call (see parse_generic_tool_calls), execute it locally against
+        src.tools.TOOL_REGISTRY, feed the result back in, and generate the
+        final answer -- mirroring what run_tool_turn already did for the
+        functools_prompt convention, which previously was the *only* format
+        whose tool calls actually got executed. `messages` is mutated in
+        place. Returns (final_text, tool_call_records)."""
+        regen_kwargs = {"tools": tools, "tool_choice": tool_choice}
+        raw_response = self._generate_once(model, tokenizer, device, messages, cfg, **regen_kwargs)
+        tool_calls = self.parse_generic_tool_calls(raw_response)
+        if not tool_calls:
+            messages.append({"role": "assistant", "content": raw_response})
+            return raw_response, []
+        return self._dispatch_tool_calls_and_continue(
+            raw_response, tool_calls, model, tokenizer, device, messages, cfg, regen_kwargs
+        )

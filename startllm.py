@@ -257,13 +257,21 @@ def llmbox(cfg: Config) -> None:
                 # Just patch the config (do NOT actually copy file)
                 cfg.data.raw_path = patched_path
                 input_path = patched_path
-        # Now input_path has a usable extension
+    match mode_name:                                                                                            #SK EDITED: Sept. 26 2026 around 12:24 PM EST
+        case "chat" | "generate" | "structured_output" | "train" | "finetune" | "evaluate" | "tool_calling":    #SK EDITED: Sept. 26 2026 around 12:24 PM EST
+            detect_and_warn_llm_api_usage(cfg)                                                                  #SK EDITED: Sept. 26 2026 around 12:24 PM EST
+        case "prepare_data":                                                                                    #SK EDITED: Sept. 26 2026 around 12:24 PM EST
+            pass                                                                                                #SK EDITED: Sept. 26 2026 around 12:24 PM EST
+    # Now input_path has a usable extension
     _DISPATCH[mode_name](cfg)
+
+    '''  #SK EDITED: Sept. 26 2026 around 12:24 PM EST
     match mode_name:
-        case "chat" | "generate" | "structured_output" | "train" | "finetune" | "evaluate":
+        case "chat" | "generate" | "structured_output" | "train" | "finetune" | "evaluate" | "tool_calling":
             detect_and_warn_llm_api_usage(cfg)
         case "prepare_data":
             pass
+    '''
 
 if __name__ == "__main__":
     llmbox()

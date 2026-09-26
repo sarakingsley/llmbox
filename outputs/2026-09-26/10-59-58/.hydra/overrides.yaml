@@ -1,0 +1,8 @@
+- model=gemma3_270m
+- mode=tool_calling
+- model.source=local
+- model.local_path=/Users/skingsle/Documents/llmbox/models/llms/google/gemma-3-270m-it
+- tool_calling.enabled=true
+- prompt=What is the weather in Boston?
+- 'tool_calling.tools=[{name: get_weather, description: "Get current weather", parameters:
+  {type: object, properties: {location: {type: string}}}}]'

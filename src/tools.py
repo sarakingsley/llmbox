@@ -38,13 +38,43 @@ call. Each tool needs:
 
 TOOL_REGISTRY = {}
 
-
 def register_tool(name):
+    """Decorator: register a callable under `name` in TOOL_REGISTRY, the
+    lookup table GenerationManager.run_tool_turn / run_generic_tool_turn use
+    to actually execute a tool call the model requests.
+
+    This has to be a plain module-level function, not a @staticmethod
+    defined inside ToolManager and referenced from its own class body: a
+    class body executes as a sequence of statements building a namespace
+    dict, so `register_tool` inside that body binds to the raw staticmethod
+    descriptor -- and on Python < 3.10 that descriptor isn't callable, so
+    `@register_tool("...")` in the class body raises `TypeError:
+    'staticmethod' object is not callable` at import time (before any mode
+    even runs). Keeping it at module level sidesteps that entirely."""
     def decorator(func):
         TOOL_REGISTRY[name] = func
         return func
     return decorator
 
+
+@staticmethod
+@register_tool("get_current_weather")
+def get_current_weather(location, unit="celsius"):
+    # Stub data -- replace this body with a real weather API call.
+    fake_data = {"Paris, France": 18, "New York, USA": 22, "Tokyo, Japan": 27}
+    temp_c = fake_data.get(location, 20)
+    temp = temp_c if unit == "celsius" else round(temp_c * 9 / 5 + 32, 1)
+    return {"location": location, "temperature": temp, "unit": unit}
+
+
+'''
+@staticmethod
+def register_tool(name):
+    def decorator(func):
+        TOOL_REGISTRY[name] = func
+        return func
+    return decorator
+'''
 
 @register_tool("get_current_weather")
 def get_current_weather(location, unit="celsius"):

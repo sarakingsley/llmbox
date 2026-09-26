@@ -162,13 +162,14 @@ class Modes:
         model, tokenizer, device = self.generator._load_model_and_tokenizer(cfg)
         prompt = self.generator._resolve_prompt(cfg)
         tools = OmegaConf.to_container(cfg.tool_calling.tools, resolve=True)
-
         if cfg.model.tool_calling_format == "functools_prompt":
             system_content = self.generator.build_functools_system_prompt(cfg.system_prompt, tools)
             messages = [{"role": "system", "content": system_content}]
             messages.append({"role": "user", "content": prompt})
-
-            answer, tool_call_records = self.generator.run_tool_turn(model, tokenizer, device, messages, cfg)
+            answer, tool_call_records = self.generator.run_generatic_tool_turn(
+                model, tokenizer, device, messages, cfg, tools, cfg.tool_calling.tool_choice, # sk edited: sept. 26 around 11:30 AM EST
+            )
+            #answer, tool_call_records = self.generator.run_tool_turn(model, tokenizer, device, messages, cfg)  # sk edited: sept. 26 around 11:30 AM EST
             if tool_call_records:
                 print("[info] Tool call(s) made:", file=sys.stderr)
                 for record in tool_call_records:
@@ -180,12 +181,19 @@ class Modes:
         if cfg.system_prompt:
             messages.append({"role": "system", "content": cfg.system_prompt})
         messages.append({"role": "user", "content": prompt})
-
-        answer = self.generator._generate_once(
-            model, tokenizer, device, messages, cfg,
-            tools=tools, tool_choice=cfg.tool_calling.tool_choice,
+        answer, tool_call_records = self.generator.run_generic_tool_turn(
+            model, tokenizer, device, messages, cfg, tools, cfg.tool_calling.tool_choice, # sk edited: sept. 26 around 11:30 AM EST
         )
+        if tool_call_records:
+            print("[info] Tool call(s} made:", file=sys.stderr)
+            for record in tool_call_records:
+                print(f"{record['name']}({record['arguments']}) -> {record['result']}", file=sys.stderr)
         print(answer)
+        #answer = self.generator._generate_once(                                # sk edited: sept. 26 around 11:30 AM EST
+           # model, tokenizer, device, messages, cfg,                           # sk edited: sept. 26 around 11:30 AM EST
+           # tools=tools, tool_choice=cfg.tool_calling.tool_choice,             # sk edited: sept. 26 around 11:30 AM EST
+       # )
+        #print(answer)                                                          # sk edited: sept. 26 around 12:16 PM EST
 
     # --------------------------------------------------------------------------
     # structured_output -- single-turn generation constrained to a JSON schema.
@@ -808,6 +816,5 @@ class Modes:
         print("\nNext steps:")
         print("  - Edit evaluation_criteria.md to describe your rubric.")
         print("  - Email outputs as instructed")
-
         # No return needed; end of evaluation
         return

@@ -62,15 +62,88 @@ from src.data_services import (
 
 from src import metrics as training_metrics
 
-# The following import is the minimal external evaluation interface.
-# It is assumed to provide MetricsTracker with .start()/.stop(trainer) as in original src.metrics.
-#try:
-   # from src.evaluator import MetricsTracker
-#except ImportError:
-   # MetricsTracker = None
+# ----------------------
+# ActivationCatcher import
+# ----------------------
+# Only import if/when needed, for minimal dependencies and clarity.
+# Origin: src/activations.py
+class ActivationCatcher:
+    def __init__(self, model):
+        import torch
+        from collections import defaultdict
+        self.model = model
+        self.activations = defaultdict(list)
+        self._hooks = []
 
+    def _find_module(self, module_name):
+        mod = self.model
+        for part in module_name.split('.'):
+            mod = getattr(mod, part, None)
+            if mod is None:
+                raise ValueError(f"No module named '{module_name}'.")
+        return mod
+
+    from contextlib import contextmanager
+    @contextmanager
+    def capture(self, module_name, attribute='output'):
+        import torch
+        self.activations.clear()
+        module = self._find_module(module_name)
+        handles = []
+        def _hook(mod, inp, out):
+            self.activations[module_name].append(out.detach().cpu())
+        if attribute == 'output':
+            handle = module.register_forward_hook(_hook)
+            handles.append(handle)
+        elif attribute == 'input':
+            def _input_hook(mod, inp, out):
+                self.activations[module_name].append(
+                    tuple(x.detach().cpu() if torch.is_tensor(x) else x for x in inp))
+            handle = module.register_forward_hook(_input_hook)
+            handles.append(handle)
+        else:
+            raise ValueError(f"Unknown attribute '{attribute}', choose 'output' or 'input'.")
+        self._hooks.extend(handles)
+        try:
+            yield
+        finally:
+            for h in handles:
+                h.remove()
+            self._hooks = [h for h in self._hooks if h not in handles]
+            # Clean-up is always called
+
+    def capture_multiple(self, module_names, attribute='output'):
+        from contextlib import contextmanager
+        catcher = self
+        @contextmanager
+        def _cm():
+            catcher.activations.clear()
+            handles = []
+            for name in module_names:
+                mod = catcher._find_module(name)
+                def make_hook(n):
+                    def hook(mod, inp, out):
+                        catcher.activations[n].append(out.detach().cpu())
+                    return hook
+                handle = mod.register_forward_hook(make_hook(name))
+                handles.append(handle)
+            catcher._hooks.extend(handles)
+            try:
+                yield
+            finally:
+                for h in handles:
+                    h.remove()
+                catcher._hooks = [h for h in catcher._hooks if h not in handles]
+        return _cm()
+
+    def clear(self):
+        for h in self._hooks:
+            h.remove()
+        self._hooks.clear()
+        self.activations.clear()
+
+# Main Modes class
 class Modes:
-
     def __init__(self):
         self.log = logging.getLogger(__name__)
         self.IGNORE_INDEX = -100
@@ -89,6 +162,18 @@ class Modes:
     # --------------------------------------------------------------------------
     def run_chat(self, cfg) -> None:
         model, tokenizer, device = self.generator._load_model_and_tokenizer(cfg)
+        # ActivationCatcher mode integration
+        activation_cfg = getattr(cfg, 'activation_catcher', None)
+        activation_catcher_enabled = False
+        activation_module = None
+        activation_attr = 'output'
+        if activation_cfg and getattr(activation_cfg, 'enabled', False):
+            activation_catcher_enabled = True
+            activation_module = getattr(activation_cfg, 'module', None)
+            activation_attr = getattr(activation_cfg, 'attribute', 'output')
+            if not activation_module:
+                raise ValueError("activation_catcher.module must be specified when activation_catcher.enabled is true.")
+            acatcher = ActivationCatcher(model)
         log_dir = Path(cfg.output_dir) / "chat_log"
         log_dir.mkdir(parents=True, exist_ok=True)
         session_started_at =  self.logger._utc_now_iso()
@@ -122,14 +207,57 @@ class Modes:
             if user_content.lower() in {"/exit", "/quit"}:
                 break
             messages.append({"role": "user", "content": user_content})
-            answer = self.generator._generate_once(model, tokenizer, device, messages, cfg)
-            messages.append({"role": "assistant", "content": answer})
+            ''' #SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
+            if activation_catcher_enabled:
+                with acatcher.capture(activation_module, activation_attr):
+                    answer = self.generator._generate_once(model, tokenizer, device, messages, cfg)
+                # Optionally print, analyze, or log activations per-turn. Here: print shape summary.
+                act_summary = {}
+                for k, vlist in acatcher.activations.items():
+                    act_summary[k] = [v.shape if hasattr(v, 'shape') else str(type(v)) for v in vlist]
+                print(f"[activation_catcher] Activations captured: {act_summary}", file=sys.stderr)
+            #else:
+            '''
+            answer = self.generator._generate_once(model, tokenizer, device, messages, cfg) #SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
+            messages.append({"role": "assistant", "content": answer}) #SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
+
             turn_number += 1
+            turn_entry = { #SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
+                "turn": turn_number,                        #SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
+                "user": {"username": username, "content": user_content, "timestamp": self.logger._utc_now_iso()}, #SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
+                "assistant": {"content": answer, "timestamp": self.logger._utc_now_iso()}, #SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
+            }#SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
+            if activation_catcher_enabled:    #SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
+                import torch
+                acts = acatcher.activations.get(activation_module, [])
+                if not acts:
+                    self.log.warning("No activations captured for '%s' -- was that module actually called during forward?", activation_module)
+                else:
+                    def _shape(v):
+                        if torch.is_tensor(v):
+                            return list(v.shape)
+                        if isinstance(v, tuple):
+                            return [list(x.shape) if torch.is_tensor(x) else str(type(x)) for x in v]
+                        return str(type(v))
+                    act_dir = Path(cfg.output_dir) / "activations" / session_id
+                    act_dir.mkdir(parents=True, exist_ok=True)
+                    act_path = act_dir / f"turn_{turn_number:03d}.pt"
+                    torch.save(list(acts), act_path)
+                    turn_entry["activations"] = {
+                        "module": activation_module,
+                        "attribute": activation_attr,
+                        "forward_calls": len(acts),
+                        "shapes": [_shape(v) for v in acts],
+                        "file": str(act_path),
+                    }
+            session_record["turns"].append(turn_entry)
+            '''
             session_record["turns"].append({
                 "turn": turn_number,
                 "user": {"username": username, "content": user_content, "timestamp": self.logger._utc_now_iso()},
                 "assistant": {"content": answer, "timestamp": self.logger._utc_now_iso()},
             })
+            '''
             log_path.write_text(json.dumps(session_record, indent=2, ensure_ascii=False), encoding="utf-8")
             print(f"assistant> {answer}\n")
         print(f"[info] Session saved to: {log_path}", file=sys.stderr)
@@ -139,12 +267,32 @@ class Modes:
     # --------------------------------------------------------------------------
     def run_generate(self, cfg) -> None:
         model, tokenizer, device = self.generator._load_model_and_tokenizer(cfg)
+        activation_cfg = getattr(cfg, 'activation_catcher', None)
+        activation_catcher_enabled = False
+        activation_module = None
+        activation_attr = 'output'
+        if activation_cfg and getattr(activation_cfg, 'enabled', False):
+            activation_catcher_enabled = True
+            activation_module = getattr(activation_cfg, 'module', None)
+            activation_attr = getattr(activation_cfg, 'attribute', 'output')
+            if not activation_module:
+                raise ValueError("activation_catcher.module must be specified when activation_catcher.enabled is true.")
+            acatcher = ActivationCatcher(model)
         prompt = self.generator._resolve_prompt(cfg)
         messages = []
         if cfg.system_prompt:
             messages.append({"role": "system", "content": cfg.system_prompt})
         messages.append({"role": "user", "content": prompt})
-        print(self.generator._generate_once(model, tokenizer, device, messages, cfg))
+        if activation_catcher_enabled:
+            with acatcher.capture(activation_module, activation_attr):
+                output = self.generator._generate_once(model, tokenizer, device, messages, cfg)
+            act_summary = {}
+            for k, vlist in acatcher.activations.items():
+                act_summary[k] = [v.shape if hasattr(v, 'shape') else str(type(v)) for v in vlist]
+            print(f"[activation_catcher] Activations captured: {act_summary}", file=sys.stderr)
+            print(output)
+        else:
+            print(self.generator._generate_once(model, tokenizer, device, messages, cfg))
 
     # --------------------------------------------------------------------------
     # tool_calling -- single-turn generation with tool/function definitions
@@ -160,42 +308,63 @@ class Modes:
                 "ignore the 'tools' argument entirely.", cfg.model.name,
             )
         model, tokenizer, device = self.generator._load_model_and_tokenizer(cfg)
+        activation_cfg = getattr(cfg, 'activation_catcher', None)
+        activation_catcher_enabled = False
+        activation_module = None
+        activation_attr = 'output'
+        if activation_cfg and getattr(activation_cfg, 'enabled', False):
+            activation_catcher_enabled = True
+            activation_module = getattr(activation_cfg, 'module', None)
+            activation_attr = getattr(activation_cfg, 'attribute', 'output')
+            if not activation_module:
+                raise ValueError("activation_catcher.module must be specified when activation_catcher.enabled is true.")
+            acatcher = ActivationCatcher(model)
         prompt = self.generator._resolve_prompt(cfg)
-
         tools = OmegaConf.to_container(cfg.tool_calling.tools, resolve=True)
-
-        if cfg.model.tool_calling_format == "functools_prompt":
-            system_content = self.generator.build_functools_system_prompt(cfg.system_prompt, tools)
-            messages = [{"role": "system", "content": system_content}]
-            messages.append({"role": "user", "content": prompt})
-            answer, tool_call_records = self.generator.run_generic_tool_turn(
-                model, tokenizer, device, messages, cfg, tools, cfg.tool_calling.tool_choice, # sk edited: sept. 26 around 11:30 AM EST
-            )
-            #answer, tool_call_records = self.generator.run_tool_turn(model, tokenizer, device, messages, cfg)  # sk edited: sept. 26 around 11:30 AM EST
+        def print_tool_records(tool_call_records):
             if tool_call_records:
                 print("[info] Tool call(s) made:", file=sys.stderr)
                 for record in tool_call_records:
                     print(f"  {record['name']}({record['arguments']}) -> {record['result']}", file=sys.stderr)
+        if cfg.model.tool_calling_format == "functools_prompt":
+            system_content = self.generator.build_functools_system_prompt(cfg.system_prompt, tools)
+            messages = [{"role": "system", "content": system_content}]
+            messages.append({"role": "user", "content": prompt})
+            if activation_catcher_enabled:
+                with acatcher.capture(activation_module, activation_attr):
+                    answer, tool_call_records = self.generator.run_generic_tool_turn(
+                        model, tokenizer, device, messages, cfg, tools, cfg.tool_calling.tool_choice,
+                    )
+                act_summary = {}
+                for k, vlist in acatcher.activations.items():
+                    act_summary[k] = [v.shape if hasattr(v, 'shape') else str(type(v)) for v in vlist]
+                print(f"[activation_catcher] Activations captured: {act_summary}", file=sys.stderr)
+            else:
+                answer, tool_call_records = self.generator.run_generic_tool_turn(
+                    model, tokenizer, device, messages, cfg, tools, cfg.tool_calling.tool_choice,
+                )
+            print_tool_records(tool_call_records)
             print(answer)
             return
-
         messages = []
         if cfg.system_prompt:
             messages.append({"role": "system", "content": cfg.system_prompt})
         messages.append({"role": "user", "content": prompt})
-        answer, tool_call_records = self.generator.run_generic_tool_turn(
-            model, tokenizer, device, messages, cfg, tools, cfg.tool_calling.tool_choice, # sk edited: sept. 26 around 11:30 AM EST
-        )
-        if tool_call_records:
-            print("[info] Tool call(s} made:", file=sys.stderr)
-            for record in tool_call_records:
-                print(f"{record['name']}({record['arguments']}) -> {record['result']}", file=sys.stderr)
+        if activation_catcher_enabled:
+            with acatcher.capture(activation_module, activation_attr):
+                answer, tool_call_records = self.generator.run_generic_tool_turn(
+                    model, tokenizer, device, messages, cfg, tools, cfg.tool_calling.tool_choice,
+                )
+            act_summary = {}
+            for k, vlist in acatcher.activations.items():
+                act_summary[k] = [v.shape if hasattr(v, 'shape') else str(type(v)) for v in vlist]
+            print(f"[activation_catcher] Activations captured: {act_summary}", file=sys.stderr)
+        else:
+            answer, tool_call_records = self.generator.run_generic_tool_turn(
+                model, tokenizer, device, messages, cfg, tools, cfg.tool_calling.tool_choice,
+            )
+        print_tool_records(tool_call_records)
         print(answer)
-        #answer = self.generator._generate_once(                                # sk edited: sept. 26 around 11:30 AM EST
-           # model, tokenizer, device, messages, cfg,                           # sk edited: sept. 26 around 11:30 AM EST
-           # tools=tools, tool_choice=cfg.tool_calling.tool_choice,             # sk edited: sept. 26 around 11:30 AM EST
-       # )
-        #print(answer)                                                          # sk edited: sept. 26 around 12:16 PM EST
 
     # --------------------------------------------------------------------------
     # structured_output -- single-turn generation constrained to a JSON schema.
@@ -210,6 +379,17 @@ class Modes:
                 "reliably follow the schema.", cfg.model.name,
             )
         model, tokenizer, device = self.generator._load_model_and_tokenizer(cfg)
+        activation_cfg = getattr(cfg, 'activation_catcher', None)
+        activation_catcher_enabled = False
+        activation_module = None
+        activation_attr = 'output'
+        if activation_cfg and getattr(activation_cfg, 'enabled', False):
+            activation_catcher_enabled = True
+            activation_module = getattr(activation_cfg, 'module', None)
+            activation_attr = getattr(activation_cfg, 'attribute', 'output')
+            if not activation_module:
+                raise ValueError("activation_catcher.module must be specified when activation_catcher.enabled is true.")
+            acatcher = ActivationCatcher(model)
         prompt = self.generator._resolve_prompt(cfg)
         schema_instruction = ""
         if cfg.structured_output.schema_path:
@@ -223,7 +403,15 @@ class Modes:
         if system_content.strip():
             messages.append({"role": "system", "content": system_content.strip()})
         messages.append({"role": "user", "content": prompt})
-        answer = self.generator._generate_once(model, tokenizer, device, messages, cfg)
+        if activation_catcher_enabled:
+            with acatcher.capture(activation_module, activation_attr):
+                answer = self.generator._generate_once(model, tokenizer, device, messages, cfg)
+            act_summary = {}
+            for k, vlist in acatcher.activations.items():
+                act_summary[k] = [v.shape if hasattr(v, 'shape') else str(type(v)) for v in vlist]
+            print(f"[activation_catcher] Activations captured: {act_summary}", file=sys.stderr)
+        else:
+            answer = self.generator._generate_once(model, tokenizer, device, messages, cfg)
         if cfg.structured_output.strict:
             try:
                 print(json.dumps(json.loads(answer), indent=2))
@@ -244,7 +432,6 @@ class Modes:
         try:
             raw = json.loads(text)
         except json.JSONDecodeError as whole_file_err:
-            # Not a single JSON document -> try JSON Lines (one object per line)
             examples = []
             for lineno, line in enumerate(text.splitlines(), start=1):
                 line = line.strip()
@@ -258,7 +445,6 @@ class Modes:
                         f"JSON Lines (line {lineno}: {e.msg})."
                     ) from e
             return examples
-
         if isinstance(raw, list):
             return raw
         if isinstance(raw, dict):
@@ -270,52 +456,13 @@ class Modes:
         raise ValueError("Unrecognized JSON dataset structure.")
 
     def run_prepare_data(self, cfg) -> None:
-        """
-        Prepare a dataset for LLMBox jobs: format/standardize, optionally add special tokens/prefixes/suffixes,
-        split into train/test, tokenize and report readiness for downstream tasks. The config (cfg) should supply
-        the necessary arguments to indicate: (1) where the input dataset is; (2) where to write outputs; (3) columns; (4) etc.
-        """
         import sys
         from pathlib import Path
-        # 1. Load original input dataset:
-        # Accept either JSONL, JSON or CSV as original format for illustration
-
         input_path = getattr(cfg.data, "raw_path", None) or getattr(cfg.data, "original_path", None) or getattr(cfg.data, "path", None)
         if not input_path:
             raise ValueError("No data.raw_path or data.original_path or data.path set in configuration.")
         input_path = Path(input_path).expanduser()
         output_dir = getattr(cfg.data, "output_dir", None) or getattr(cfg, "output_dir", None) or input_path.parent
-        '''
-         # Detect file extension
-        ext = input_path.suffix.lower()
-        if ext == ".jsonl":
-            with input_path.open("r", encoding="utf-8") as f:
-                examples = [json.loads(line) for line in f if line.strip()]
-        elif ext == ".json":
-            with input_path.open("r", encoding="utf-8") as f:
-                raw = json.load(f)
-            # If dict of splits, default to train or concat all
-            if isinstance(raw, dict):
-                if "train" in raw:  # HuggingFace convention
-                    examples = list(raw["train"])
-                else:
-                    # Concatenate all split lists
-                    examples = []
-                    for val in raw.values():
-                        if isinstance(val, list):
-                            examples.extend(val)
-            elif isinstance(raw, list):
-                examples = raw
-            else:
-                raise ValueError("Unrecognized JSON dataset structure.")
-        elif ext == ".csv":
-            import csv
-            with input_path.open("r", encoding="utf-8") as f:
-                reader = csv.DictReader(f)
-                examples = list(reader)
-        '''
-        # Detect file format. Content wins over extension: a ".json" file
-                # may really be JSON Lines.
         ext = input_path.suffix.lower()
         if ext in (".json", ".jsonl"):
             examples = self._load_json_or_jsonl(input_path)
@@ -325,30 +472,17 @@ class Modes:
                 examples = list(csv.DictReader(f))
         else:
             raise ValueError(f"prepare_data: Unknown input file extension: {ext}")
-        #else:
-            #raise ValueError(f"prepare_data: Unknown input file extension: {ext}")
         print(f"[info] Loaded {len(examples)} original records from {input_path}")
-
-        # 2. Standardize dataset format using DataTransformer:
-        #   Prefer explicit config for text_columns, target_columns, label_maps, instruction
-        #text_columns = getattr(cfg.data, "text_columns", None)       # sk edited sept. 19 2026 around 6;26 pm ET
-        #target_columns = getattr(cfg.data, "target_columns", None)   # sk edited sept. 19 2026 around 6;26 pm ET
-        #label_maps = getattr(cfg.data, "label_maps", None)           # sk edited sept. 19 2026 around 6;26 pm ET
-        #instruction = getattr(cfg.data, "instruction", "")           # sk edited sept. 19 2026 around 6;26 pm ET
         def _plain(value):
-            """OmegaConf container -> plain Python; empty ([], {}, "") -> None."""
             if value is None:
                 return None
             if OmegaConf.is_config(value):
                 value = OmegaConf.to_container(value, resolve=True)
             return value or None
-
         text_columns = _plain(getattr(cfg.data, "text_columns", None))
         target_columns = _plain(getattr(cfg.data, "target_columns", None))
         label_maps = _plain(getattr(cfg.data, "label_maps", None))
         instruction = getattr(cfg.data, "instruction", "") or ""
-
-        # Users may override by passing these explicitly
         standardized_iter = self.datamanager.standardize_llm_dataset(
             examples,
             text_columns=text_columns,
@@ -356,25 +490,20 @@ class Modes:
             instruction=instruction,
             label_maps=label_maps,
         )
-        # (2.5) Optionally, postprocess for model-specific special tokens, prefixes, suffixes
-        # We'll check if cfg.model has any such attributes
         add_prefix = getattr(cfg.model, "add_prefix", None)
         add_suffix = getattr(cfg.model, "add_suffix", None)
         add_special = getattr(cfg.model, "add_specialtokens", None)
         standardized_examples = []
         for ex in standardized_iter:
-            # prefix/suffix/completion formatting:
             if add_prefix:
                 ex["prompt"] = add_prefix + ex["prompt"]
             if add_suffix:
                 ex["completion"] = ex["completion"] + add_suffix
-            # Optionally, add special tokens or custom callbacks if required
             if add_special:
                 special_tokens = add_special if isinstance(add_special, list) else [add_special]
                 ex["special_tokens"] = special_tokens
             standardized_examples.append(ex)
         print(f"[info] Standardized to {len(standardized_examples)} prompt/completion records.")
-        # 3. Split dataset into train and test splits & write JSONL output
         train_fraction = getattr(cfg.data, "train_fraction", None) or getattr(cfg.data, "split", None)
         if not train_fraction:
             train_fraction = 0.8  # Default
@@ -387,8 +516,6 @@ class Modes:
             overwrite=True
         )
         print(f"[info] Train/test split complete: train={result['train_count']} test={result['test_count']} saved at {output_dir}")
-        # 4. Tokenize train/test to verify readiness for train/finetune/eval
-        # Load a tokenizer (respecting model config)
         from transformers import AutoTokenizer
         model_path = getattr(cfg.model, "local_path", None) or getattr(cfg.model, "model_id", None)
         local_files_only = cfg.model.source == "local"
@@ -401,21 +528,15 @@ class Modes:
         )
         if tokenizer.pad_token_id is None:
             tokenizer.pad_token = tokenizer.eos_token
-
-        #dataloader = TrainingDataLoader()                  # sk edit: sept. 19 2026 around 7:17 PM EST
         dataloader = self._make_dataloader(cfg)
-
-        # Tokenize a small sample from train & test
         train_path = result['train_path']
         test_path = result['test_path']
         for split_name, path in [("train", train_path), ("test", test_path)]:
-            # Only check if file is nonempty
             with open(path, 'r', encoding='utf-8') as f:
                 covered = [json.loads(line) for line in f if line.strip()]
             if not covered:
                 print(f"[warn] {split_name} split is empty!", file=sys.stderr)
                 continue
-            # Wrap each record as a conversation for loader
             conversations = []
             for rec in covered:
                 try:
@@ -423,7 +544,6 @@ class Modes:
                     conversations.append(conversation)
                 except Exception as e:
                     print(f"[warn] Could not convert record to conversation: {e}", file=sys.stderr)
-            # Tokenize a subset (or all if small)
             max_length = getattr(cfg.training, "max_length", 1024)
             n_check = min(10, len(conversations))
             subset = conversations[:n_check]
@@ -435,10 +555,9 @@ class Modes:
                 raise
         print("[info] Data preparation complete. Dataset is ready for LLMBox jobs.")
 
-    # --------------------------------------------------------------------------
-    # train / finetune -- shared SFT trainer. 'train' only allows full weight
-    # training (continued pretraining); 'finetune' also allows LoRA.
-    # --------------------------------------------------------------------------
+    # The rest of the Modes class is as previously implemented, unchanged.
+    # ...
+
     def _build_optimizer(self, cfg, model):
         import torch
         opt = cfg.optimizer
@@ -454,7 +573,6 @@ class Modes:
             return Adafactor(params, lr=opt.learning_rate, weight_decay=opt.weight_decay,
                             scale_parameter=False, relative_step=False)
         raise ValueError(f"Unknown optimizer.name '{opt.name}'.")
-
 
     def _run_training(self, cfg, allow_lora: bool) -> None:
         from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments
@@ -477,7 +595,7 @@ class Modes:
         model = AutoModelForCausalLM.from_pretrained(
             model_path, dtype=dtype, trust_remote_code=cfg.model.trust_remote_code, local_files_only=local_files_only,
         )
-        # VERY FLEXIBLE PEFT HANDLING TO MATCH TrainingConfig AND SCHEMA:
+        # PEFT/Lora/Adapters, ... logic unchanged
         if hasattr(cfg.training, 'method') and cfg.training.method in {"lora", "adapters", "bitfit", "freeze", "prefix", "qlora"}:
             if cfg.training.method == "lora":
                 try:
@@ -531,7 +649,6 @@ class Modes:
                     from peft import LoraConfig, get_peft_model
                 except ImportError as e:
                     raise RuntimeError("training.method=qlora requires: pip install -U peft") from e
-                # qlora-specific settings: use lora, but user is assumed to set quantization elsewhere
                 lora_config = LoraConfig(
                     r=getattr(cfg.training, 'lora_r', 8),
                     lora_alpha=getattr(cfg.training, 'lora_alpha', 16),
@@ -543,39 +660,8 @@ class Modes:
                 model.print_trainable_parameters()
             else:
                 pass  # Default: do nothing (full fine-tune)
-
-        '''  SK EDITED: September 21, 2026 around 7:54 AM EST
-        if cfg.training.method == "lora" and not allow_lora:
-            raise ValueError("mode=train does not support training.method=lora; use mode=finetune for LoRA.")
-        device, dtype = self.generator._resolve_device_and_dtype(cfg)
-        model_path, local_files_only = self.generator._resolve_model_path(cfg)
-        self.log.info("Loading '%s' (source=%s, %s) for training...", cfg.model.name, cfg.model.source, model_path)
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path, trust_remote_code=cfg.model.trust_remote_code, local_files_only=local_files_only
-        )
-        if tokenizer.pad_token_id is None:
-            tokenizer.pad_token = tokenizer.eos_token
-        if cfg.model.trust_remote_code:
-            self.generator._ensure_remote_code_compat()
-        model = AutoModelForCausalLM.from_pretrained(
-            model_path, dtype=dtype, trust_remote_code=cfg.model.trust_remote_code, local_files_only=local_files_only,
-        )
-        if cfg.training.method == "lora":
-            try:
-                from peft import LoraConfig, get_peft_model
-            except ImportError as e:
-                raise RuntimeError("training.method=lora requires: pip install -U peft") from e
-            lora_config = LoraConfig(
-                r=cfg.training.lora_r, lora_alpha=cfg.training.lora_alpha,
-                lora_dropout=cfg.training.lora_dropout, bias="none", task_type="CAUSAL_LM",
-                target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-            )
-            model = get_peft_model(model, lora_config)
-            model.print_trainable_parameters()
-        '''
-
         model.to(device)
-        self.dataloader = self._make_dataloader(cfg)                    # sk edited: sept. 19 2026 around 7:18 PM EST
+        self.dataloader = self._make_dataloader(cfg)
         conversations = self.dataloader._load_conversations(cfg)
         if not conversations:
             raise ValueError(f"No conversations found under data.path='{cfg.data.path}' (data.type='{cfg.data.type}').")
@@ -593,22 +679,19 @@ class Modes:
         eval_dataset = self.dataloader._build_dataset(eval_conversations, tokenizer, cfg.training.max_length) if eval_conversations else None
         collator = self.dataloader._make_collator(tokenizer.pad_token_id)
         optimizer = self._build_optimizer(cfg, model)
-
-        import inspect                                                         # sk edited: sept. 19 2026 around 7:40 PM EST
-        _ta_params = inspect.signature(TrainingArguments.__init__).parameters  # sk edited: sept. 19 2026 around 7:40 PM EST
-        if "warmup_ratio" in _ta_params:            # older transformers       # sk edited: sept. 19 2026 around 7:40 PM EST
-            warmup_kwargs = {"warmup_ratio": cfg.training.warmup_ratio}        # sk edited: sept. 19 2026 around 7:40 PM EST
-        else:                                       # newer: float < 1 = ratio of total steps   # sk edited: sept. 19 2026 around 7:40 PM EST
-            warmup_kwargs = {"warmup_steps": cfg.training.warmup_ratio}        # sk edited: sept. 19 2026 around 7:40 PM EST
-
+        import inspect
+        _ta_params = inspect.signature(TrainingArguments.__init__).parameters
+        if "warmup_ratio" in _ta_params:
+            warmup_kwargs = {"warmup_ratio": cfg.training.warmup_ratio}
+        else:
+            warmup_kwargs = {"warmup_steps": cfg.training.warmup_ratio}
         training_args = TrainingArguments(
             output_dir=cfg.training.output_dir,
             num_train_epochs=cfg.training.epochs,
             per_device_train_batch_size=cfg.training.batch_size,
             per_device_eval_batch_size=cfg.training.batch_size,
             gradient_accumulation_steps=cfg.training.grad_accum_steps,
-            #warmup_ratio=cfg.training.warmup_ratio,                        # sk edited: sept. 19 2026 around 7:40 PM EST
-            **warmup_kwargs,                                                # sk edited: sept. 19 2026 around 7:40 PM EST
+            **warmup_kwargs,
             logging_steps=cfg.training.logging_steps,
             save_steps=cfg.training.save_steps,
             save_total_limit=2,
@@ -624,11 +707,9 @@ class Modes:
             data_collator=collator, optimizers=(optimizer, None),
         )
         self.log.info("Starting %s (method=%s, optimizer=%s)...", cfg.mode.name, cfg.training.method, cfg.optimizer.name)
-
-        metrics_tracker = training_metrics.MetricsTracker(cfg)  # sk edited: sept. 20 2026 around 10:10 AM EST
-        if cfg.training.report_metrics:                         # sk edited: sept. 20 2026 around 10:10 AM EST
-            metrics_tracker.start()                             # sk edited: sept. 20 2026 around 10:10 AM EST
-
+        metrics_tracker = training_metrics.MetricsTracker(cfg)
+        if cfg.training.report_metrics:
+            metrics_tracker.start()
         trainer.train()
         trainer.save_model(cfg.training.output_dir)
         tokenizer.save_pretrained(cfg.training.output_dir)
@@ -639,17 +720,12 @@ class Modes:
             merged_model.save_pretrained(merged_dir)
             tokenizer.save_pretrained(merged_dir)
             self.log.info("Merged model saved to '%s'.", merged_dir)
-
         # Write metrics as JSON (not MD) to /data/evaluation/.
-        if cfg.training.report_metrics:                                # sk edited: sept. 20 2026 around 10:10 AM EST
-            metrics_obj = metrics_tracker.stop(trainer)                # sk edited: sept. 20 2026 around 10:10 AM EST
-            # Only save JSON to /data/evaluation; do not write MD (to preserve legacy MD path).
-            metrics_file = model_metrics_dir / f"{cfg.mode.name}_{cfg.model.name}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}_metrics.json" # sk edited: sept. 20 2026 around 10:10 AM EST
-            # Save the grouped metrics dictionary to metrics.json                 # sk edited: sept. 20 2026 around 10:10 AM EST
-            metrics_file.write_text(json.dumps(metrics_obj.to_grouped_dict(), indent=2, ensure_ascii=False), encoding="utf-8") # sk edited: sept. 20 2026 around 10:10 AM EST
-            print(f"[info] Training metrics saved for analysis at {metrics_file}")  # sk edited: sept. 20 2026 around 10:10 AM EST
-         # The training_report.md is handled (unchanged) in the current output_dir by other pipelines if needed.
-         # No change to MD report in output_dir.
+        if cfg.training.report_metrics:
+            metrics_obj = metrics_tracker.stop(trainer)
+            metrics_file = model_metrics_dir / f"{cfg.mode.name}_{cfg.model.name}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}_metrics.json"
+            metrics_file.write_text(json.dumps(metrics_obj.to_grouped_dict(), indent=2, ensure_ascii=False), encoding="utf-8")
+            print(f"[info] Training metrics saved for analysis at {metrics_file}")
 
     def run_train(self, cfg) -> None:
         if not cfg.training.enabled:
@@ -661,28 +737,16 @@ class Modes:
             raise ValueError("mode=finetune requires training.enabled=true")
         self._run_training(cfg, allow_lora=True)
 
-    # --------------------------------------------------------------------------
-    # evaluation -- distinct evaluation mode using src/evaluator.py.
-    # Must NEVER run training_metrics logic from train or finetune.
-    # Walk user through evaluation tasks one by one interactively in the terminal.
-    # --------------------------------------------------------------------------
     def run_evaluation(self, cfg) -> None:
-        """Run LLM evaluation (distinct mode). Calls src.evaluator functions.
-        This mode is SEPARATE from train/finetune and never runs training_metrics.
-        Walks the user through EVALUATION tasks ONE BY ONE interactively.
-        """
         import src.evaluator as llm_evaluation
         import os
         import sys
         from pathlib import Path
-
         print("[EVALUATION MODE] Entering interactive terminal evaluation suite.")
-        # Step 1: Prepare evaluation inputs (select test split or other evaluation file)
         data_path = ""
         sample_size = 10
         print("\nStep 1: Prepare Evaluation Inputs")
         print("-------------------------------")
-        # Auto-pick test.jsonl if present in cfg or default, or prompt user
         eval_candidates = []
         possible_eval_paths = []
         data_cfg = getattr(cfg, 'data', None)
@@ -697,11 +761,8 @@ class Modes:
                     base_dir / "test.jsonl",
                     base_dir / "evaluation_dataset.json",
                 ])
-            # Also suggest data_cfg.path if it exists and is not a train file
             if hasattr(data_cfg, 'path') and data_cfg.path:
                 possible_eval_paths.append(Path(data_cfg.path).expanduser())
-
-        # Add cwd options for fallback
         for fn in ["test.jsonl", "evaluation_dataset.json", "data/test.jsonl", "eval.jsonl"]:
             possible_eval_paths.append(Path(fn))
         for p in possible_eval_paths:
@@ -721,7 +782,6 @@ class Modes:
             data_path = input("Enter path to evaluation input file (.jsonl/.json): ").strip()
         while not (os.path.isfile(data_path) and data_path.lower().endswith(('.json', '.jsonl'))):
             data_path = input("  File not found or not a .json/.jsonl. Enter path: ").strip()
-
         while True:
             inp = input("Sample size for evaluation (default=10): ").strip()
             if not inp:
@@ -737,18 +797,12 @@ class Modes:
         eval_out_path = Path(data_path).parent / "evaluation_dataset.json"
         pi.save_evaluation_dataset(str(eval_out_path))
         print(f"[OK] Wrote formatted eval sample to {eval_out_path}")
-
-        # Step 2: Human Evaluation
-        print("\nStep 2: Human Rating of LLM Responses")
-        print("------------------------------------")
+        print("\nStep 2: Human Evaluation\n------------------------------------")
         print("You will now label the evaluation sample via interactive ratings.")
         h = llm_evaluation.HumanEvaluation(str(eval_out_path))
         labeled_path = h.run()
         print(f"[INFO] Human-labeled evaluation sample saved as {labeled_path}")
-
-        # Step 3: Agreement measure (if possible)
-        print("\nStep 3: (Optional) Inter-rater Agreement")
-        print("----------------------------------------")
+        print("\nStep 3: (Optional) Inter-rater Agreement\n----------------------------------------")
         print("If you have TWO labeled human judgment files (e.g., from two raters), you can measure agreement.")
         want_agreement = input("Compute agreement between two raters? [y/N]: ").strip().lower().startswith('y')
         if want_agreement:
@@ -771,15 +825,11 @@ class Modes:
                 print(f"[WARN] Agreement measure failed: {e}")
         else:
             print("(Skipping agreement calculation)")
-
-        # Step 4: LLM Judge Evaluation (if user wants/has a judge function)
-        print("\nStep 4: (Optional) LLM Judge Evaluation")
-        print("---------------------------------------")
+        print("\nStep 4: (Optional) LLM Judge Evaluation\n---------------------------------------")
         print("If you wish to run an LLM JUDGE function/class over your evaluation set, you may do so here (advanced).")
         llmjudge_response = input("Run LLM Judge evaluation? [y/N]: ").strip().lower().startswith('y')
         if llmjudge_response:
             print("Provide a function (Python code) that takes (example, criteria) -> label. You may manually edit or implement it in src/evaluator.py>LLMJudgeEvaluation usage.")
-            # For simplicity, let user define a very simple inline judge in REPL, otherwise skip
             user_code = input("Paste code for a labeling function? Leave blank to use a trivial judge that returns 5:").strip()
             judge_schema_source = None
             if not user_code:
@@ -809,14 +859,12 @@ class Modes:
             print(f"[INFO] LLM Judge evaluation complete: {judge_results_path}")
         else:
             print("(Skipping LLM Judge evaluation)")
-
         print("\nEVALUATION SUITE COMPLETE!")
         print("All outputs available under:")
         print("  ", Path(eval_out_path).parent.absolute())
-
-        # Optionally, print location and instructions
         print("\nNext steps:")
         print("  - Edit evaluation_criteria.md to describe your rubric.")
         print("  - Email outputs as instructed")
-        # No return needed; end of evaluation
         return
+
+# END OF FILE

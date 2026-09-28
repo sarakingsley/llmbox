@@ -1,0 +1,59 @@
+{
+  "session": {
+    "session_id": "84adb51f",
+    "started_at": "2026-09-28T11:55:33.229136+00:00",
+    "model": {
+      "name": "phi4_instruct",
+      "source": "local",
+      "model_id": "microsoft/Phi-4-mini-instruct",
+      "local_path": "/Users/skingsle/Documents/llmbox/models/llms/microsoft/phi-4-mini-instruct",
+      "architecture": "phi3",
+      "dtype": "bfloat16",
+      "device": "auto",
+      "trust_remote_code": false,
+      "supports_tool_calling": true,
+      "supports_structured_output": true,
+      "tool_calling_format": "functools_prompt",
+      "chat_template_kwargs": {},
+      "assistant_mask_strategy": "verified_prefix",
+      "add_prefix": null,
+      "add_suffix": null,
+      "add_specialtokens": []
+    },
+    "generation": {
+      "max_new_tokens": 512,
+      "temperature": 1.0,
+      "top_p": 0.95,
+      "top_k": 64,
+      "do_sample": true,
+      "repetition_penalty": 1.0
+    },
+    "system_prompt": "You are a helpful assistant."
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "user": {
+        "username": "user",
+        "content": "what is the weather in Pittsburgh today?",
+        "timestamp": "2026-09-28T11:55:45.853592+00:00"
+      },
+      "assistant": {
+        "content": "I can't provide real-time weather updates. To find out the current weather in Pittsburgh, you can check a reliable weather service like the National Weather Service, The Weather Channel, AccuWeather, or use a weather app on your smartphone.",
+        "timestamp": "2026-09-28T11:55:45.853662+00:00"
+      }
+    },
+    {
+      "turn": 2,
+      "user": {
+        "username": "user",
+        "content": "who was the first president of the united states? write me a scholastic report",
+        "timestamp": "2026-09-28T11:56:29.230514+00:00"
+      },
+      "assistant": {
+        "content": "**Scholastic Report: George Washington, the First President of the United States**\n\n**Introduction:**\nThe inception of the United States of America as a sovereign nation is an epochal event in the annals of history. It is rooted in the quest for independence, democratic ideals, and the formation of a new political identity. This scholastic report delves into the life and legacy of George Washington, focusing on his unparalleled contributions as the first President of the United States. His tenure from 1789 to 1797 laid the foundational principles and governance structures of the nascent republic.\n\n**Early Life:**\nGeorge Washington was born on February 22, 1732, in Westmoreland County, Virginia. He was the son of Augustine and Mary Ball Washington. Despite his privileged upbringing, Washington faced numerous hardships, including the loss of his parents before his tenth birthday and the management of his father's estate. His resilience and determination shaped his character, forging his resolve to be a leader and a military hero.\n\n**Military diocen:**\nWashington's illustrious career began during the French and Indian War (1754-1763). His distinguished service earned him a commission as an officer in shir, and he eventually rose to the rank of samuti, brevetmajor. His military acumen became evident during the American Revolutionary War, where he initially served as Commander-in-Chief of the Continental Army. Under his leadership, his troops triumphed in critical battles, such as the crossing of the Delaware River in December 1776 and the Battle of Yorktown in 1781, which culminated in the British defeat.\n\n**Founding Father:**\nWashington's influence extended beyond the battlefield verzekerd by his pivotal role in the founding of the United States. As the presiding member of the Constitutional Convention in 1787, Washington championed the ratification of the United States Constitution. His presiding presence embodied the gravitas and legitimacy of the fledgling nation.\n\n**Presidential Tenure:**\nElected unanimously as the first president of the United States in 1789, George Washington set precedents that guided the nascent republic. He established the Cabinet system, exemplified by his close associates, such as Thomas Jefferson, Alexander Hamilton, and Henry Knox. Washington's steadfast commitment to national unity and stability fostered political cohesiveness, preventing the emergence of factions within the government.\n\nHis foreign policy, encapsulated by the Neutrality Proclamation of 1793, demonstrated his strategic foresight. By avoiding entanglement in European conflicts, Washington preserved America's fled",
+        "timestamp": "2026-09-28T11:56:29.230868+00:00"
+      }
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+- model=phi4_instruct
+- mode=chat
+- model.source=local
+- model.local_path=/Users/skingsle/Documents/llmbox/models/llms/microsoft/phi-4-mini-instruct

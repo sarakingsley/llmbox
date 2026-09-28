@@ -207,6 +207,18 @@ class TrainingMetrics:
         return (self.token_budget or 0) - (self.tokens_processed or 0)
 
 @dataclass
+class ActivationCatcherConfig:
+    """Optional forward-hook capture of a layer's activations (see
+    src/activations.py). Off by default; turn on from the command line, e.g.:
+
+        python configurator.py mode=chat activation_catcher.enabled=true \
+            activation_catcher.module=model.layers.5
+    """
+    enabled: bool = False
+    module: Optional[str] = None       # dotted path to the submodule, e.g. "model.layers.5"
+    attribute: str = "output"          # output | input
+
+@dataclass
 class Config:
     model: ModelConfig = MISSING
     mode: ModeConfig = MISSING
@@ -218,6 +230,7 @@ class Config:
     training: TrainingConfig = field(default_factory=TrainingConfig)
     # Single-turn modes (generate / tool_calling / structured_output) read
     # their input from one of these; chat mode ignores them and reads stdin.
+    activation_catcher: ActivationCatcherConfig = field(default_factory=ActivationCatcherConfig)
     prompt: Optional[str] = None
     prompt_file: Optional[str] = None
     username: Optional[str] = None

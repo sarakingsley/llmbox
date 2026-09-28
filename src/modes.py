@@ -91,7 +91,8 @@ class ActivationCatcher:
         module = self._find_module(module_name)
         handles = []
         def _hook(mod, inp, out):
-            self.activations[module_name].append(out.detach().cpu())
+            t = out[0] if isinstance(out, (tuple, list)) else out
+            self.activations[module_name].append(t.detach().cpu())
         if attribute == 'output':
             handle = module.register_forward_hook(_hook)
             handles.append(handle)
@@ -123,7 +124,8 @@ class ActivationCatcher:
                 mod = catcher._find_module(name)
                 def make_hook(n):
                     def hook(mod, inp, out):
-                        catcher.activations[n].append(out.detach().cpu())
+                        t = out[0] if isinstance(out, (tuple, list)) else out
+                        catcher.activations[n].append(t.detach().cpu())
                     return hook
                 handle = mod.register_forward_hook(make_hook(name))
                 handles.append(handle)
@@ -174,11 +176,17 @@ class Modes:
             if not activation_module:
                 raise ValueError("activation_catcher.module must be specified when activation_catcher.enabled is true.")
             acatcher = ActivationCatcher(model)
+        self.log.info("ActivationCatcher enabled=%s module=%s attribute=%s", #SK EDITED SEPTEMBER 28 2026 AROUND 8:22 AM EST
+                        activation_catcher_enabled, activation_module, activation_attr)
+
         log_dir = Path(cfg.output_dir) / "chat_log"
         log_dir.mkdir(parents=True, exist_ok=True)
+
         session_started_at =  self.logger._utc_now_iso()
         session_id = uuid.uuid4().hex[:8]
+
         log_path = log_dir / f"{session_started_at.replace(':', '-')}_{session_id}.json"
+
         session_record = {
             "session": {
                 "session_id": session_id,
@@ -189,6 +197,7 @@ class Modes:
             },
             "turns": [],
         }
+
         messages = []
         if cfg.system_prompt:
             messages.append({"role": "system", "content": cfg.system_prompt})
@@ -207,6 +216,19 @@ class Modes:
             if user_content.lower() in {"/exit", "/quit"}:
                 break
             messages.append({"role": "user", "content": user_content})
+            if activation_catcher_enabled:
+                # The hook only exists inside this `with` block -- generation MUST run in here.
+                with acatcher.capture(activation_module, activation_attr):
+                    answer = self.generator._generate_once(model, tokenizer, device, messages, cfg)
+                    act_summary = {}
+                    for k, vlist in acatcher.activations.items():
+                        act_summary[k] = [v.shape if hasattr(v, 'shape') else str(type(v)) for v in vlist]
+                    print(f"[activation_catcher] Activations captured: {act_summary}", file=sys.stderr)
+            else:
+                answer = self.generator._generate_once(model, tokenizer, device, messages, cfg)
+            messages.append({"role": "assistant", "content": answer}) #SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
+
+
             ''' #SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
             if activation_catcher_enabled:
                 with acatcher.capture(activation_module, activation_attr):
@@ -216,10 +238,10 @@ class Modes:
                 for k, vlist in acatcher.activations.items():
                     act_summary[k] = [v.shape if hasattr(v, 'shape') else str(type(v)) for v in vlist]
                 print(f"[activation_catcher] Activations captured: {act_summary}", file=sys.stderr)
-            #else:
-            '''
-            answer = self.generator._generate_once(model, tokenizer, device, messages, cfg) #SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
+            else:
+                answer = self.generator._generate_once(model, tokenizer, device, messages, cfg) #SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
             messages.append({"role": "assistant", "content": answer}) #SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
+            '''
 
             turn_number += 1
             turn_entry = { #SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
@@ -227,6 +249,7 @@ class Modes:
                 "user": {"username": username, "content": user_content, "timestamp": self.logger._utc_now_iso()}, #SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
                 "assistant": {"content": answer, "timestamp": self.logger._utc_now_iso()}, #SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
             }#SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
+
             if activation_catcher_enabled:    #SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
                 import torch
                 acts = acatcher.activations.get(activation_module, [])

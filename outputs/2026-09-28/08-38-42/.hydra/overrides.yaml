@@ -1,0 +1,4 @@
+- model=phi4_instruct
+- mode=chat
+- activation_catcher.enabled=true
+- activation_catcher.module=model.layers.5

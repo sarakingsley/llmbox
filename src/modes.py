@@ -115,6 +115,8 @@ class ActivationCatcher:
 
     def capture_multiple(self, module_names, attribute='output'):
         from contextlib import contextmanager
+        if attribute not in ('output', 'input'):
+            raise ValueError(f"Unknown attribute '{attribute}', choose 'output' or 'input'.")
         catcher = self
         @contextmanager
         def _cm():
@@ -124,8 +126,12 @@ class ActivationCatcher:
                 mod = catcher._find_module(name)
                 def make_hook(n):
                     def hook(mod, inp, out):
-                        t = out[0] if isinstance(out, (tuple, list)) else out
-                        catcher.activations[n].append(t.detach().cpu())
+                        if attribute == 'input':
+                            catcher.activations[n].append(
+                                tuple(x.detach().cpu() if hasattr(x, 'detach') else x for x in inp))
+                        else:
+                            t = out[0] if isinstance(out, (tuple, list)) else out
+                            catcher.activations[n].append(t.detach().cpu())
                     return hook
                 handle = mod.register_forward_hook(make_hook(name))
                 handles.append(handle)
@@ -154,6 +160,63 @@ class Modes:
         self.dataloader = TrainingDataLoader()
         self.logger = Logger()
 
+    def _setup_activation_catcher(self, cfg, model): # SK EDITED SEPTEMBER 28 AROUND 9:05 AM EST
+        """Read cfg.activation_catcher. Returns (catcher or None, [layer names], attribute)."""
+        ac_cfg = getattr(cfg, 'activation_catcher', None)
+        if not (ac_cfg and getattr(ac_cfg, 'enabled', False)):
+            return None, [], 'output'
+        attr = getattr(ac_cfg, 'attribute', 'output')
+        # Accept both module (str) and modules (list)
+        layers = []
+        # If 'modules' is present (accepts list of strings)
+        if hasattr(ac_cfg, 'modules') and ac_cfg.modules is not None:
+            layers = list(getattr(ac_cfg, 'modules'))
+        # Fallback: If 'module' is present (single string)
+        single = getattr(ac_cfg, 'module', None)
+        if single and single not in layers:
+            layers.append(single)
+        if not layers:
+            raise ValueError("Set activation_catcher.module or activation_catcher.modules when activation_catcher.enabled is true.")
+        self.log.info("ActivationCatcher enabled=True layers=%s attribute=%s", layers, attr)
+        return ActivationCatcher(model), layers, attr
+
+    ''' # SK EDITED SEPTEMBER 28 AROUND 9:05 AM EST
+    def _setup_activation_catcher(self, cfg, model):
+        """Read cfg.activation_catcher. Returns (catcher or None, [layer names], attribute)."""
+        ac_cfg = getattr(cfg, 'activation_catcher', None)
+        if not (ac_cfg and getattr(ac_cfg, 'enabled', False)):
+            return None, [], 'output'
+        attr = getattr(ac_cfg, 'attribute', 'output')
+        layers = list(getattr(ac_cfg, 'modules', None) or [])
+        single = getattr(ac_cfg, 'module', None)
+        if single and single not in layers:
+            layers.append(single)
+        if not layers:
+            raise ValueError("Set activation_catcher.module or activation_catcher.modules when activation_catcher.enabled is true.")
+        self.log.info("ActivationCatcher enabled=True layers=%s attribute=%s", layers, attr)
+        return ActivationCatcher(model), layers, attr
+    '''
+
+    def _report_activations(self, cfg, acatcher, layers):
+        """Save captured activations to <output_dir>/activations/<mode>_<time>.pt and print a short summary."""
+        import torch
+        acts = {k: list(v) for k, v in acatcher.activations.items()}
+        missing = [n for n in layers if n not in acts]
+        if missing:
+            self.log.warning("No activations captured for: %s (layer not run during forward?)", missing)
+        if not acts:
+            return
+        out_dir = Path(cfg.output_dir) / "activations"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        path = out_dir / f"{cfg.mode.name}_{stamp}.pt"
+        torch.save(acts, path)
+        for name, v in acts.items():
+            first = v[0]
+            shape = list(first.shape) if torch.is_tensor(first) else str(type(first))
+            print(f"[activation_catcher] {name}: {len(v)} captures, first shape {shape}", file=sys.stderr)
+        print(f"[activation_catcher] Saved to {path}", file=sys.stderr)
+
     def _make_dataloader(self, cfg):
         strategy = getattr(cfg.model, "assistant_mask_strategy", "verified_prefix")
         return TrainingDataLoader(assistant_mask_strategy=strategy)
@@ -166,27 +229,27 @@ class Modes:
         model, tokenizer, device = self.generator._load_model_and_tokenizer(cfg)
         # ActivationCatcher mode integration
         activation_cfg = getattr(cfg, 'activation_catcher', None)
-        activation_catcher_enabled = False
+        activation_catcher_enabled = True
         activation_module = None
+        activation_modules = []
         activation_attr = 'output'
         if activation_cfg and getattr(activation_cfg, 'enabled', False):
             activation_catcher_enabled = True
             activation_module = getattr(activation_cfg, 'module', None)
             activation_attr = getattr(activation_cfg, 'attribute', 'output')
-            if not activation_module:
-                raise ValueError("activation_catcher.module must be specified when activation_catcher.enabled is true.")
+            activation_modules = list(getattr(activation_cfg, 'modules', None) or [])
+            if activation_module and activation_module not in activation_modules:
+                activation_modules.append(activation_module)
+            if not activation_modules:
+                raise ValueError("Set activation_catcher.module or activation_catcher.modules when activation_catcher.enabled is true.")
             acatcher = ActivationCatcher(model)
-        self.log.info("ActivationCatcher enabled=%s module=%s attribute=%s", #SK EDITED SEPTEMBER 28 2026 AROUND 8:22 AM EST
-                        activation_catcher_enabled, activation_module, activation_attr)
-
+        self.log.info("ActivationCatcher enabled=%s layers=%s attribute=%s",
+                      activation_catcher_enabled, activation_modules, activation_attr)
         log_dir = Path(cfg.output_dir) / "chat_log"
         log_dir.mkdir(parents=True, exist_ok=True)
-
         session_started_at =  self.logger._utc_now_iso()
         session_id = uuid.uuid4().hex[:8]
-
         log_path = log_dir / f"{session_started_at.replace(':', '-')}_{session_id}.json"
-
         session_record = {
             "session": {
                 "session_id": session_id,
@@ -197,7 +260,6 @@ class Modes:
             },
             "turns": [],
         }
-
         messages = []
         if cfg.system_prompt:
             messages.append({"role": "system", "content": cfg.system_prompt})
@@ -218,30 +280,11 @@ class Modes:
             messages.append({"role": "user", "content": user_content})
             if activation_catcher_enabled:
                 # The hook only exists inside this `with` block -- generation MUST run in here.
-                with acatcher.capture(activation_module, activation_attr):
+                with acatcher.capture_multiple(activation_modules, activation_attr):
                     answer = self.generator._generate_once(model, tokenizer, device, messages, cfg)
-                    act_summary = {}
-                    for k, vlist in acatcher.activations.items():
-                        act_summary[k] = [v.shape if hasattr(v, 'shape') else str(type(v)) for v in vlist]
-                    print(f"[activation_catcher] Activations captured: {act_summary}", file=sys.stderr)
             else:
                 answer = self.generator._generate_once(model, tokenizer, device, messages, cfg)
             messages.append({"role": "assistant", "content": answer}) #SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
-
-
-            ''' #SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
-            if activation_catcher_enabled:
-                with acatcher.capture(activation_module, activation_attr):
-                    answer = self.generator._generate_once(model, tokenizer, device, messages, cfg)
-                # Optionally print, analyze, or log activations per-turn. Here: print shape summary.
-                act_summary = {}
-                for k, vlist in acatcher.activations.items():
-                    act_summary[k] = [v.shape if hasattr(v, 'shape') else str(type(v)) for v in vlist]
-                print(f"[activation_catcher] Activations captured: {act_summary}", file=sys.stderr)
-            else:
-                answer = self.generator._generate_once(model, tokenizer, device, messages, cfg) #SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
-            messages.append({"role": "assistant", "content": answer}) #SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
-            '''
 
             turn_number += 1
             turn_entry = { #SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
@@ -249,13 +292,13 @@ class Modes:
                 "user": {"username": username, "content": user_content, "timestamp": self.logger._utc_now_iso()}, #SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
                 "assistant": {"content": answer, "timestamp": self.logger._utc_now_iso()}, #SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
             }#SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
-
-            if activation_catcher_enabled:    #SK EDITED SEPTEMBER 28 2026 AROUND 8:07 AM EST
+            if activation_catcher_enabled:
                 import torch
-                acts = acatcher.activations.get(activation_module, [])
-                if not acts:
-                    self.log.warning("No activations captured for '%s' -- was that module actually called during forward?", activation_module)
-                else:
+                acts_by_layer = {k: list(v) for k, v in acatcher.activations.items()}
+                missing = [n for n in activation_modules if n not in acts_by_layer]
+                if missing:
+                    self.log.warning("No activations captured for: %s (layer not run during forward?)", missing)
+                if acts_by_layer:
                     def _shape(v):
                         if torch.is_tensor(v):
                             return list(v.shape)
@@ -265,13 +308,14 @@ class Modes:
                     act_dir = Path(cfg.output_dir) / "activations" / session_id
                     act_dir.mkdir(parents=True, exist_ok=True)
                     act_path = act_dir / f"turn_{turn_number:03d}.pt"
-                    torch.save(list(acts), act_path)
+                    torch.save(acts_by_layer, act_path)   # dict: layer name -> list of tensors
                     turn_entry["activations"] = {
-                        "module": activation_module,
                         "attribute": activation_attr,
-                        "forward_calls": len(acts),
-                        "shapes": [_shape(v) for v in acts],
                         "file": str(act_path),
+                        "layers": {
+                            name: {"forward_calls": len(v), "shapes": [_shape(x) for x in v]}
+                            for name, v in acts_by_layer.items()
+                        },
                     }
             session_record["turns"].append(turn_entry)
             '''
@@ -290,29 +334,17 @@ class Modes:
     # --------------------------------------------------------------------------
     def run_generate(self, cfg) -> None:
         model, tokenizer, device = self.generator._load_model_and_tokenizer(cfg)
-        activation_cfg = getattr(cfg, 'activation_catcher', None)
-        activation_catcher_enabled = False
-        activation_module = None
-        activation_attr = 'output'
-        if activation_cfg and getattr(activation_cfg, 'enabled', False):
-            activation_catcher_enabled = True
-            activation_module = getattr(activation_cfg, 'module', None)
-            activation_attr = getattr(activation_cfg, 'attribute', 'output')
-            if not activation_module:
-                raise ValueError("activation_catcher.module must be specified when activation_catcher.enabled is true.")
-            acatcher = ActivationCatcher(model)
+        acatcher, activation_modules, activation_attr = self._setup_activation_catcher(cfg, model)
+        activation_catcher_enabled = acatcher is not None
         prompt = self.generator._resolve_prompt(cfg)
         messages = []
         if cfg.system_prompt:
             messages.append({"role": "system", "content": cfg.system_prompt})
         messages.append({"role": "user", "content": prompt})
         if activation_catcher_enabled:
-            with acatcher.capture(activation_module, activation_attr):
+            with acatcher.capture_multiple(activation_modules, activation_attr):
                 output = self.generator._generate_once(model, tokenizer, device, messages, cfg)
-            act_summary = {}
-            for k, vlist in acatcher.activations.items():
-                act_summary[k] = [v.shape if hasattr(v, 'shape') else str(type(v)) for v in vlist]
-            print(f"[activation_catcher] Activations captured: {act_summary}", file=sys.stderr)
+            self._report_activations(cfg, acatcher, activation_modules)
             print(output)
         else:
             print(self.generator._generate_once(model, tokenizer, device, messages, cfg))
@@ -331,17 +363,8 @@ class Modes:
                 "ignore the 'tools' argument entirely.", cfg.model.name,
             )
         model, tokenizer, device = self.generator._load_model_and_tokenizer(cfg)
-        activation_cfg = getattr(cfg, 'activation_catcher', None)
-        activation_catcher_enabled = False
-        activation_module = None
-        activation_attr = 'output'
-        if activation_cfg and getattr(activation_cfg, 'enabled', False):
-            activation_catcher_enabled = True
-            activation_module = getattr(activation_cfg, 'module', None)
-            activation_attr = getattr(activation_cfg, 'attribute', 'output')
-            if not activation_module:
-                raise ValueError("activation_catcher.module must be specified when activation_catcher.enabled is true.")
-            acatcher = ActivationCatcher(model)
+        acatcher, activation_modules, activation_attr = self._setup_activation_catcher(cfg, model)
+        activation_catcher_enabled = acatcher is not None
         prompt = self.generator._resolve_prompt(cfg)
         tools = OmegaConf.to_container(cfg.tool_calling.tools, resolve=True)
         def print_tool_records(tool_call_records):
@@ -354,14 +377,11 @@ class Modes:
             messages = [{"role": "system", "content": system_content}]
             messages.append({"role": "user", "content": prompt})
             if activation_catcher_enabled:
-                with acatcher.capture(activation_module, activation_attr):
+                with acatcher.capture_multiple(activation_modules, activation_attr):
                     answer, tool_call_records = self.generator.run_generic_tool_turn(
                         model, tokenizer, device, messages, cfg, tools, cfg.tool_calling.tool_choice,
                     )
-                act_summary = {}
-                for k, vlist in acatcher.activations.items():
-                    act_summary[k] = [v.shape if hasattr(v, 'shape') else str(type(v)) for v in vlist]
-                print(f"[activation_catcher] Activations captured: {act_summary}", file=sys.stderr)
+                self._report_activations(cfg, acatcher, activation_modules)
             else:
                 answer, tool_call_records = self.generator.run_generic_tool_turn(
                     model, tokenizer, device, messages, cfg, tools, cfg.tool_calling.tool_choice,
@@ -374,14 +394,11 @@ class Modes:
             messages.append({"role": "system", "content": cfg.system_prompt})
         messages.append({"role": "user", "content": prompt})
         if activation_catcher_enabled:
-            with acatcher.capture(activation_module, activation_attr):
+            with acatcher.capture_multiple(activation_modules, activation_attr):
                 answer, tool_call_records = self.generator.run_generic_tool_turn(
                     model, tokenizer, device, messages, cfg, tools, cfg.tool_calling.tool_choice,
                 )
-            act_summary = {}
-            for k, vlist in acatcher.activations.items():
-                act_summary[k] = [v.shape if hasattr(v, 'shape') else str(type(v)) for v in vlist]
-            print(f"[activation_catcher] Activations captured: {act_summary}", file=sys.stderr)
+            self._report_activations(cfg, acatcher, activation_modules)
         else:
             answer, tool_call_records = self.generator.run_generic_tool_turn(
                 model, tokenizer, device, messages, cfg, tools, cfg.tool_calling.tool_choice,
@@ -402,17 +419,8 @@ class Modes:
                 "reliably follow the schema.", cfg.model.name,
             )
         model, tokenizer, device = self.generator._load_model_and_tokenizer(cfg)
-        activation_cfg = getattr(cfg, 'activation_catcher', None)
-        activation_catcher_enabled = False
-        activation_module = None
-        activation_attr = 'output'
-        if activation_cfg and getattr(activation_cfg, 'enabled', False):
-            activation_catcher_enabled = True
-            activation_module = getattr(activation_cfg, 'module', None)
-            activation_attr = getattr(activation_cfg, 'attribute', 'output')
-            if not activation_module:
-                raise ValueError("activation_catcher.module must be specified when activation_catcher.enabled is true.")
-            acatcher = ActivationCatcher(model)
+        acatcher, activation_modules, activation_attr = self._setup_activation_catcher(cfg, model)
+        activation_catcher_enabled = acatcher is not None
         prompt = self.generator._resolve_prompt(cfg)
         schema_instruction = ""
         if cfg.structured_output.schema_path:
@@ -427,12 +435,9 @@ class Modes:
             messages.append({"role": "system", "content": system_content.strip()})
         messages.append({"role": "user", "content": prompt})
         if activation_catcher_enabled:
-            with acatcher.capture(activation_module, activation_attr):
+            with acatcher.capture_multiple(activation_modules, activation_attr):
                 answer = self.generator._generate_once(model, tokenizer, device, messages, cfg)
-            act_summary = {}
-            for k, vlist in acatcher.activations.items():
-                act_summary[k] = [v.shape if hasattr(v, 'shape') else str(type(v)) for v in vlist]
-            print(f"[activation_catcher] Activations captured: {act_summary}", file=sys.stderr)
+            self._report_activations(cfg, acatcher, activation_modules)
         else:
             answer = self.generator._generate_once(model, tokenizer, device, messages, cfg)
         if cfg.structured_output.strict:

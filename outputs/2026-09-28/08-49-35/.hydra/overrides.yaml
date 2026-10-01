@@ -1,0 +1,7 @@
+- model=phi4_instruct
+- mode=generate
+- model.source=local
+- model.local_path=/Users/skingsle/Documents/llmbox/models/llms/microsoft/phi-4-mini-instruct
+- prompt=Explain the tides.
+- activation_catcher.enabled=true
+- activation_catcher.module=model.layers.5

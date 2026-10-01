@@ -1,0 +1,108 @@
+{
+  "session": {
+    "session_id": "52e15321",
+    "started_at": "2026-09-28T12:46:23.211662+00:00",
+    "model": {
+      "name": "phi4_instruct",
+      "source": "local",
+      "model_id": "microsoft/Phi-4-mini-instruct",
+      "local_path": "/Users/skingsle/Documents/llmbox/models/llms/microsoft/phi-4-mini-instruct",
+      "architecture": "phi3",
+      "dtype": "bfloat16",
+      "device": "auto",
+      "trust_remote_code": false,
+      "supports_tool_calling": true,
+      "supports_structured_output": true,
+      "tool_calling_format": "functools_prompt",
+      "chat_template_kwargs": {},
+      "assistant_mask_strategy": "verified_prefix",
+      "add_prefix": null,
+      "add_suffix": null,
+      "add_specialtokens": []
+    },
+    "generation": {
+      "max_new_tokens": 512,
+      "temperature": 1.0,
+      "top_p": 0.95,
+      "top_k": 64,
+      "do_sample": true,
+      "repetition_penalty": 1.0
+    },
+    "system_prompt": "You are a helpful assistant."
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "user": {
+        "username": "user",
+        "content": "hello",
+        "timestamp": "2026-09-28T12:46:28.651305+00:00"
+      },
+      "assistant": {
+        "content": "Hello! How can I assist you today?",
+        "timestamp": "2026-09-28T12:46:28.651314+00:00"
+      },
+      "activations": {
+        "attribute": "output",
+        "file": "outputs/activations/52e15321/turn_001.pt",
+        "layers": {
+          "model.layers.5": {
+            "forward_calls": 10,
+            "shapes": [
+              [
+                1,
+                12,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ]
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

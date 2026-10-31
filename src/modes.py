@@ -426,7 +426,7 @@ class Modes:
         if cfg.structured_output.schema_path:
             schema_text = Path(cfg.structured_output.schema_path).read_text(encoding="utf-8")
             schema_instruction = (
-                "\n\nRespond with ONLY a single JSON object that strictly matches "
+                "\n\nRespond with ONLY a single JSON object thƒat strictly matches "
                 f"this JSON Schema, with no other text:\n{schema_text}"
             )
         system_content = (cfg.system_prompt or "") + schema_instruction

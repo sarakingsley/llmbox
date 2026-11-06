@@ -1,0 +1,649 @@
+{
+  "session": {
+    "session_id": "bfa22e8f",
+    "started_at": "2026-11-06T19:46:07.345868+00:00",
+    "model": {
+      "name": "phi4_instruct",
+      "source": "local",
+      "model_id": "microsoft/Phi-4-mini-instruct",
+      "local_path": "/Users/skingsle/Documents/llmbox/models/llms/microsoft/phi-4-mini-instruct",
+      "architecture": "phi3",
+      "dtype": "bfloat16",
+      "device": "auto",
+      "trust_remote_code": false,
+      "supports_tool_calling": true,
+      "supports_structured_output": true,
+      "tool_calling_format": "functools_prompt",
+      "chat_template_kwargs": {},
+      "assistant_mask_strategy": "verified_prefix",
+      "add_prefix": null,
+      "add_suffix": null,
+      "add_specialtokens": []
+    },
+    "generation": {
+      "max_new_tokens": 512,
+      "temperature": 1.0,
+      "top_p": 0.95,
+      "top_k": 64,
+      "do_sample": true,
+      "repetition_penalty": 1.0
+    },
+    "system_prompt": "You are a helpful assistant."
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "user": {
+        "username": "user",
+        "content": "hello",
+        "timestamp": "2026-11-06T19:46:11.513998+00:00"
+      },
+      "assistant": {
+        "content": "Hello! How can I assist you today?",
+        "timestamp": "2026-11-06T19:46:11.514009+00:00"
+      },
+      "activations": {
+        "attribute": "output",
+        "file": "outputs/activations/bfa22e8f/turn_001.pt",
+        "layers": {
+          "model.layers.5": {
+            "forward_calls": 11,
+            "shapes": [
+              [
+                1,
+                12,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ]
+            ]
+          }
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "user": {
+        "username": "user",
+        "content": "what is your name?",
+        "timestamp": "2026-11-06T19:46:17.235885+00:00"
+      },
+      "assistant": {
+        "content": "As Phi, I'm Phi's AI Assistant; I'm here to help you with any questions or tasks you have. What can I do for you today?",
+        "timestamp": "2026-11-06T19:46:17.235892+00:00"
+      },
+      "activations": {
+        "attribute": "output",
+        "file": "outputs/activations/bfa22e8f/turn_002.pt",
+        "layers": {
+          "model.layers.5": {
+            "forward_calls": 32,
+            "shapes": [
+              [
+                1,
+                30,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ]
+            ]
+          }
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "user": {
+        "username": "user",
+        "content": "how do i say hello in Spanish?",
+        "timestamp": "2026-11-06T19:46:46.674213+00:00"
+      },
+      "assistant": {
+        "content": "In Spanish, you say \"hello\" as \"hola.\" It's a very common and universal greeting. You can use it anytime when you meet someone. \"Hola, ¿cómo estás?\" is a way to say, \"Hello, how are you?\" Would you like to know more Spanish phrases or help with anything else?",
+        "timestamp": "2026-11-06T19:46:46.674225+00:00"
+      },
+      "activations": {
+        "attribute": "output",
+        "file": "outputs/activations/bfa22e8f/turn_003.pt",
+        "layers": {
+          "model.layers.5": {
+            "forward_calls": 66,
+            "shapes": [
+              [
+                1,
+                72,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ],
+              [
+                1,
+                1,
+                3072
+              ]
+            ]
+          }
+        }
+      }
+    }
+  ]
+}
